@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { listingFormSchema, type ListingFormInput } from '@/lib/validators'
 import { Building2, Upload, X, User, MapPin, DollarSign, FileText } from 'lucide-react'
-import ImprovedPhotoUploadManager from './ImprovedPhotoUploadManager'
+import FixedPhotoUploadManager from './FixedPhotoUploadManager'
 
 const sectors = [
   'Technology',
@@ -126,10 +126,10 @@ export default function WorkingEnhancedListingForm({
   const [selectedIndustry, setSelectedIndustry] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [advisorSpecialties, setAdvisorSpecialties] = useState<string[]>([])
-  const [companyLogo, setCompanyLogo] = useState<any[]>([])
-  const [advisorHeadshot, setAdvisorHeadshot] = useState<any[]>([])
-  const [companyPhotos, setCompanyPhotos] = useState<any[]>([])
-  const [projectPhotos, setProjectPhotos] = useState<any[]>([])
+  const [companyLogo, setCompanyLogo] = useState<{id: string, url: string, order: number}[]>([])
+  const [advisorHeadshot, setAdvisorHeadshot] = useState<{id: string, url: string, order: number}[]>([])
+  const [companyPhotos, setCompanyPhotos] = useState<{id: string, url: string, order: number}[]>([])
+  const [projectPhotos, setProjectPhotos] = useState<{id: string, url: string, order: number}[]>([])
 
   const {
     register,
@@ -167,19 +167,11 @@ export default function WorkingEnhancedListingForm({
       if (initialData.specialties) setAdvisorSpecialties(initialData.specialties)
       if (initialData.advisorId) setHasAdvisor(true)
       
-      // Convert photos to the expected format for ImprovedPhotoUploadManager
+      // Convert photos to the expected format for FixedPhotoUploadManager
       if (initialData.photos && initialData.photos.length > 0) {
         const photoObjects = initialData.photos.map((url: string, index: number) => ({
           id: `photo-${index}`,
-          file: null as any,
-          processed: {
-            thumbnail: url,
-            card: url,
-            hero: url,
-            display: url,
-            fullscreen: url,
-            original: url
-          },
+          url: url,
           order: index
         }))
         setCompanyPhotos(photoObjects)
@@ -188,15 +180,7 @@ export default function WorkingEnhancedListingForm({
       if (initialData.projectPhotos && initialData.projectPhotos.length > 0) {
         const projectPhotoObjects = initialData.projectPhotos.map((url: string, index: number) => ({
           id: `project-photo-${index}`,
-          file: null as any,
-          processed: {
-            thumbnail: url,
-            card: url,
-            hero: url,
-            display: url,
-            fullscreen: url,
-            original: url
-          },
+          url: url,
           order: index
         }))
         setProjectPhotos(projectPhotoObjects)
@@ -206,15 +190,7 @@ export default function WorkingEnhancedListingForm({
       if (initialData.logoUrl) {
         const logoObject = {
           id: 'logo-0',
-          file: null as any,
-          processed: {
-            thumbnail: initialData.logoUrl,
-            card: initialData.logoUrl,
-            hero: initialData.logoUrl,
-            display: initialData.logoUrl,
-            fullscreen: initialData.logoUrl,
-            original: initialData.logoUrl
-          },
+          url: initialData.logoUrl,
           order: 0
         }
         setCompanyLogo([logoObject])
@@ -224,15 +200,7 @@ export default function WorkingEnhancedListingForm({
       if (initialData.headshotUrl) {
         const headshotObject = {
           id: 'headshot-0',
-          file: null as any,
-          processed: {
-            thumbnail: initialData.headshotUrl,
-            card: initialData.headshotUrl,
-            hero: initialData.headshotUrl,
-            display: initialData.headshotUrl,
-            fullscreen: initialData.headshotUrl,
-            original: initialData.headshotUrl
-          },
+          url: initialData.headshotUrl,
           order: 0
         }
         setAdvisorHeadshot([headshotObject])
@@ -283,35 +251,21 @@ export default function WorkingEnhancedListingForm({
       // Process logo for edit mode
       let logoUrl = data.logoUrl || ''
       if (companyLogo.length > 0) {
-        logoUrl = companyLogo[0].processed.card
+        logoUrl = companyLogo[0].url
       }
       
       // Process advisor headshot for edit mode
       let headshotUrl = data.headshotUrl || ''
       if (advisorHeadshot.length > 0) {
-        headshotUrl = advisorHeadshot[0].processed.card
+        headshotUrl = advisorHeadshot[0].url
       }
       
-      // Process photos for edit mode - keep existing URLs and add new ones
-      const processedPhotos = companyPhotos.map(photo => {
-        // If it's an existing photo (has no file), use the processed URL
-        if (!photo.file) {
-          return photo.processed.card
-        }
-        // If it's a new photo, use the processed URL
-        return photo.processed.card
-      })
-      console.log('Edit mode - Company photos URLs:', processedPhotos.map(url => url.substring(0, 50) + '...'))
+      // Process photos for edit mode - extract URLs
+      const processedPhotos = companyPhotos.map(photo => photo.url)
+      console.log('Edit mode - Company photos URLs:', processedPhotos)
       
-      const processedProjectPhotos = projectPhotos.map(photo => {
-        // If it's an existing photo (has no file), use the processed URL
-        if (!photo.file) {
-          return photo.processed.card
-        }
-        // If it's a new photo, use the processed URL
-        return photo.processed.card
-      })
-      console.log('Edit mode - Project photos URLs:', processedProjectPhotos.map(url => url.substring(0, 50) + '...'))
+      const processedProjectPhotos = projectPhotos.map(photo => photo.url)
+      console.log('Edit mode - Project photos URLs:', processedProjectPhotos)
       
       const formData = {
         ...data,
@@ -336,24 +290,24 @@ export default function WorkingEnhancedListingForm({
       console.log('Company photos:', companyPhotos)
       console.log('Project photos:', projectPhotos)
 
-      // Convert uploaded images to base64 for now (in production, upload to cloud storage)
+      // Extract URLs from uploaded images
       let logoUrl = data.logoUrl || ''
       if (companyLogo.length > 0) {
-        logoUrl = companyLogo[0].processed.card
+        logoUrl = companyLogo[0].url
       }
 
       let headshotUrl = data.headshotUrl || ''
       if (advisorHeadshot.length > 0) {
-        headshotUrl = advisorHeadshot[0].processed.card
+        headshotUrl = advisorHeadshot[0].url
       }
 
-      // Convert company photos to base64 using the card preset
-      const companyPhotosUrls = companyPhotos.map(photo => photo.processed.card)
-      console.log('Company photos URLs:', companyPhotosUrls.map(url => url.substring(0, 50) + '...'))
+      // Extract company photos URLs
+      const companyPhotosUrls = companyPhotos.map(photo => photo.url)
+      console.log('Company photos URLs:', companyPhotosUrls)
       
-      // Convert project photos to base64 using the card preset
-      const projectPhotosUrls = projectPhotos.map(photo => photo.processed.card)
-      console.log('Project photos URLs:', projectPhotosUrls.map(url => url.substring(0, 50) + '...'))
+      // Extract project photos URLs
+      const projectPhotosUrls = projectPhotos.map(photo => photo.url)
+      console.log('Project photos URLs:', projectPhotosUrls)
 
       // First, create advisor if they have one
       let advisorId = null
@@ -575,14 +529,11 @@ export default function WorkingEnhancedListingForm({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Headshot
               </label>
-              <ImprovedPhotoUploadManager
+              <FixedPhotoUploadManager
                 onPhotosChange={setAdvisorHeadshot}
                 maxPhotos={1}
-                aspectRatio={0.8}
-                minDimensions={{ width: 200, height: 160 }}
                 className="w-full"
                 initialPhotos={advisorHeadshot}
-                instanceId="create-advisor-headshot"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Upload a professional headshot. Minimum size: 200×160px. Click to crop and focus on the face.
@@ -761,14 +712,11 @@ export default function WorkingEnhancedListingForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Company Logo
             </label>
-            <ImprovedPhotoUploadManager
+            <FixedPhotoUploadManager
               onPhotosChange={setCompanyLogo}
               maxPhotos={1}
-              aspectRatio={1}
-              minDimensions={{ width: 200, height: 200 }}
               className="w-full"
               initialPhotos={companyLogo}
-              instanceId="create-company-logo"
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload a square logo for best results. Minimum size: 200×200px. Click to crop and adjust.
@@ -780,13 +728,11 @@ export default function WorkingEnhancedListingForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Company Photos
             </label>
-            <ImprovedPhotoUploadManager
+            <FixedPhotoUploadManager
               onPhotosChange={setCompanyPhotos}
               maxPhotos={20}
-              aspectRatio={4/3}
               className="w-full"
               initialPhotos={companyPhotos}
-              instanceId="create-company-photos"
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload up to 20 photos of your company, facilities, or team. Minimum size: 400×300px.
@@ -921,13 +867,11 @@ export default function WorkingEnhancedListingForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Project Photos
             </label>
-            <ImprovedPhotoUploadManager
+            <FixedPhotoUploadManager
               onPhotosChange={setProjectPhotos}
               maxPhotos={15}
-              aspectRatio={4/3}
               className="w-full"
               initialPhotos={projectPhotos}
-              instanceId="create-project-photos"
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload photos related to your project, expansion plans, or what you plan to acquire. Minimum size: 400×300px.

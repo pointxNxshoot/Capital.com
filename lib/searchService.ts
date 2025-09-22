@@ -1,15 +1,28 @@
 import { MeiliSearch } from 'meilisearch'
 
-const client = new MeiliSearch({
-  host: process.env.MEILISEARCH_HOST || 'http://127.0.0.1:7700',
-  apiKey: process.env.MEILISEARCH_API_KEY || 'masterKey', // Change this in production
-})
+// Initialize MeiliSearch client with error handling
+let client: MeiliSearch | null = null
+
+try {
+  client = new MeiliSearch({
+    host: process.env.MEILISEARCH_HOST || 'http://127.0.0.1:7700',
+    apiKey: process.env.MEILISEARCH_API_KEY || 'masterKey', // Change this in production
+  })
+} catch (error) {
+  console.warn('MeiliSearch client initialization failed:', error)
+  client = null
+}
 
 const INDEX_NAME = 'listings'
 
 export const searchService = {
   // Initialize the search index
   async initializeIndex() {
+    if (!client) {
+      console.warn('MeiliSearch client not available, skipping index initialization')
+      return
+    }
+    
     try {
       const index = client.index(INDEX_NAME)
       
@@ -49,6 +62,11 @@ export const searchService = {
 
   // Add or update a listing in the search index
   async addListing(listing: any) {
+    if (!client) {
+      console.warn('MeiliSearch client not available, skipping listing addition')
+      return
+    }
+    
     try {
       const index = client.index(INDEX_NAME)
       
@@ -83,6 +101,11 @@ export const searchService = {
 
   // Remove a listing from the search index
   async removeListing(listingId: string) {
+    if (!client) {
+      console.warn('MeiliSearch client not available, skipping listing removal')
+      return
+    }
+    
     try {
       const index = client.index(INDEX_NAME)
       await index.deleteDocument(listingId)
@@ -99,6 +122,11 @@ export const searchService = {
     filters?: string
     sort?: string[]
   } = {}) {
+    if (!client) {
+      console.warn('MeiliSearch client not available, returning empty results')
+      return { hits: [], totalHits: 0, offset: 0, limit: 0 }
+    }
+    
     try {
       const index = client.index(INDEX_NAME)
       
@@ -126,6 +154,11 @@ export const searchService = {
 
   // Get autocomplete suggestions
   async getAutocompleteSuggestions(query: string, limit: number = 5) {
+    if (!client) {
+      console.warn('MeiliSearch client not available, returning empty suggestions')
+      return []
+    }
+    
     try {
       const index = client.index(INDEX_NAME)
       
@@ -174,6 +207,11 @@ export const searchService = {
 
   // Sync all listings from database to search index
   async syncAllListings() {
+    if (!client) {
+      console.warn('MeiliSearch client not available, skipping sync')
+      return
+    }
+    
     try {
       const { prisma } = await import('@/lib/db')
       
@@ -202,7 +240,7 @@ export const searchService = {
         photos: Array.isArray(listing.photos) ? listing.photos : JSON.parse(listing.photos || '[]')
       }))
       
-      const index = client.index(INDEX_NAME)
+      const index = client!.index(INDEX_NAME)
       await index.addDocuments(searchDocs)
       
       console.log(`Synced ${listings.length} listings to search index`)
