@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { companySchema, searchSchema } from '@/lib/validators'
-import { buildSearchWhere, buildSearchOrderBy } from '@/lib/search'
+import { buildSearchWhere, buildSearchOrderBy, searchListings } from '@/lib/search'
+import { searchService } from '@/lib/searchService'
 
 // GET /api/companies - Search and list companies
 export async function GET(request: NextRequest) {
@@ -18,6 +19,23 @@ export async function GET(request: NextRequest) {
     }
 
     const validatedParams = searchSchema.parse(params)
+
+    // Try Meilisearch first, fallback to database search
+    const meilisearchResults = await searchListings(validatedParams)
+    
+    if (meilisearchResults) {
+      return NextResponse.json({
+        companies: meilisearchResults.companies,
+        pagination: {
+          page: meilisearchResults.page,
+          limit: meilisearchResults.limit,
+          total: meilisearchResults.total,
+          totalPages: meilisearchResults.totalPages,
+        },
+      })
+    }
+
+    // Fallback to database search
     const where = buildSearchWhere(validatedParams)
     const orderBy = buildSearchOrderBy(validatedParams)
 
@@ -38,6 +56,8 @@ export async function GET(request: NextRequest) {
           websiteUrl: true,
           suburb: true,
           state: true,
+          latitude: true,
+          longitude: true,
           tags: true,
           photos: true,
           projectPhotos: true,
@@ -78,7 +98,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    console.log('Company creation request body:', body)
     const validatedData = companySchema.parse(body)
+    console.log('Validated data:', validatedData)
+    console.log('Photos data:', validatedData.photos)
+    console.log('Project photos data:', validatedData.projectPhotos)
 
     // Generate slug from name
     const slug = validatedData.name
@@ -108,8 +132,24 @@ export async function POST(request: NextRequest) {
         photos: JSON.stringify(validatedData.photos), // Store as JSON string for SQLite
         projectPhotos: JSON.stringify(validatedData.projectPhotos), // Store as JSON string for SQLite
         status: 'pending', // New listings are pending approval
+        createdBy: validatedData.createdBy || 'anonymous', // Track who created the listing
       },
     })
+
+    // Add to Meilisearch index (only if status is published)
+    if (company.status === 'published') {
+      try {
+        await searchService.addListing({
+          ...company,
+          tags: validatedData.tags,
+          photos: validatedData.photos,
+          projectPhotos: validatedData.projectPhotos,
+        })
+      } catch (error) {
+        console.error('Error adding listing to search index:', error)
+        // Don't fail the request if search indexing fails
+      }
+    }
 
     return NextResponse.json(
       { 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Search, Building2, Plus, Tag, Bookmark } from 'lucide-react'
-import SearchBar from './SearchBar'
+import EnhancedSearchBar from './EnhancedSearchBar'
 
 export default function Header() {
   return (
@@ -42,6 +42,12 @@ export default function Header() {
               Saved
             </Link>
             <Link 
+              href="/my-listings" 
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+            >
+              My Listings
+            </Link>
+            <Link 
               href="/gallery-demo" 
               className="text-gray-700 hover:text-blue-600 transition-colors"
             >
@@ -51,7 +57,7 @@ export default function Header() {
 
           {/* Search Bar */}
           <div className="flex-1 max-w-lg mx-8">
-            <SearchBar />
+            <EnhancedSearchBar />
           </div>
 
           {/* Mobile menu button */}

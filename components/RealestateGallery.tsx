@@ -15,7 +15,10 @@ export type GalleryImage = { src: string; alt?: string };
 export default function RealestateGallery({ images }: { images: GalleryImage[] }) {
   const [thumbs, setThumbs] = useState<SwiperType | null>(null);
 
+  console.log('RealestateGallery received images:', images);
+
   if (!images || images.length === 0) {
+    console.log('No images provided to RealestateGallery');
     return (
       <div className="w-full">
         <div className="aspect-[16/9] relative overflow-hidden rounded-xl bg-gray-200 flex items-center justify-center">
@@ -66,6 +69,8 @@ export default function RealestateGallery({ images }: { images: GalleryImage[] }
                     className="object-cover"
                     loading={i === 0 ? "eager" : "lazy"}
                     sizes="(max-width: 768px) 100vw, 1200px"
+                    onLoad={() => console.log(`Image ${i + 1} loaded successfully:`, im.src.substring(0, 50) + '...')}
+                    onError={(e) => console.error(`Image ${i + 1} failed to load:`, im.src.substring(0, 50) + '...', e)}
                   />
                 </div>
               </SwiperSlide>
@@ -98,6 +103,8 @@ export default function RealestateGallery({ images }: { images: GalleryImage[] }
                     fill
                     className="object-cover"
                     sizes="160px"
+                    onLoad={() => console.log(`Thumbnail ${i + 1} loaded successfully:`, im.src.substring(0, 50) + '...')}
+                    onError={(e) => console.error(`Thumbnail ${i + 1} failed to load:`, im.src.substring(0, 50) + '...', e)}
                   />
                 </div>
               </SwiperSlide>

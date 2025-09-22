@@ -19,6 +19,8 @@ interface ImprovedPhotoUploadManagerProps {
   aspectRatio?: number
   className?: string
   minDimensions?: { width: number; height: number }
+  initialPhotos?: Photo[]
+  instanceId?: string // Unique identifier to prevent state conflicts
 }
 
 export default function ImprovedPhotoUploadManager({ 
@@ -26,19 +28,44 @@ export default function ImprovedPhotoUploadManager({
   maxPhotos = 20,
   aspectRatio = ASPECT_RATIOS.CARD,
   className = "",
-  minDimensions
+  minDimensions,
+  initialPhotos = [],
+  instanceId = 'default'
 }: ImprovedPhotoUploadManagerProps) {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [cropPhoto, setCropPhoto] = useState<Photo | null>(null)
   const [isCropModalOpen, setIsCropModalOpen] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [isMounted, setIsMounted] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Notify parent component when photos change
+  // Initialize photos with initialPhotos
   useEffect(() => {
-    onPhotosChange(photos)
-  }, [photos, onPhotosChange])
+    if (initialPhotos.length > 0 && photos.length === 0) {
+      setPhotos(initialPhotos)
+    }
+    // Mark as initialized after first render
+    if (!isInitialized) {
+      setIsInitialized(true)
+    }
+  }, [initialPhotos, photos.length, isInitialized])
+
+  // Notify parent component when photos change (but not during initialization)
+  useEffect(() => {
+    if (isInitialized && isMounted) {
+      onPhotosChange(photos)
+    }
+  }, [photos, onPhotosChange, isInitialized, isMounted])
+
+  // Cleanup effect to prevent state conflicts when component unmounts
+  useEffect(() => {
+    return () => {
+      // Mark component as unmounted to prevent further state updates
+      setIsMounted(false)
+    }
+  }, [])
 
   const handleFileSelect = async (files: FileList) => {
     const newFiles = Array.from(files).slice(0, maxPhotos - photos.length)
@@ -63,22 +90,16 @@ export default function ImprovedPhotoUploadManager({
             order: photos.length,
             error: validation.error
           }
-          setPhotos(prev => [...prev, errorPhoto])
+          if (isMounted) {
+            setPhotos(prev => [...prev, errorPhoto])
+            setIsInitialized(true)
+          }
           continue
         }
 
-        // For now, just use the original image to fix black photo issue
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const originalUrl = e.target?.result as string
-          const processed = {
-            thumbnail: originalUrl,
-            card: originalUrl,
-            hero: originalUrl,
-            display: originalUrl,
-            fullscreen: originalUrl,
-            original: originalUrl
-          }
+        // Process image to all presets for better quality and performance
+        try {
+          const processed = await processImageToAllPresets(file, minDimensions)
           
           const newPhoto: Photo = {
             id: `photo-${Date.now()}-${Math.random()}`,
@@ -87,9 +108,39 @@ export default function ImprovedPhotoUploadManager({
             order: photos.length
           }
           
-          setPhotos(prev => [...prev, newPhoto])
+          if (isMounted) {
+            setPhotos(prev => [...prev, newPhoto])
+            setIsInitialized(true)
+          }
+        } catch (error) {
+          console.error('Error processing image:', error)
+          // Fallback to simple preview
+          const reader = new FileReader()
+          reader.onload = (e) => {
+            const originalUrl = e.target?.result as string
+            const processed = {
+              thumbnail: originalUrl,
+              card: originalUrl,
+              hero: originalUrl,
+              display: originalUrl,
+              fullscreen: originalUrl,
+              original: originalUrl
+            }
+            
+            const newPhoto: Photo = {
+              id: `photo-${Date.now()}-${Math.random()}`,
+              file,
+              processed,
+              order: photos.length
+            }
+            
+            if (isMounted) {
+              setPhotos(prev => [...prev, newPhoto])
+              setIsInitialized(true)
+            }
+          }
+          reader.readAsDataURL(file)
         }
-        reader.readAsDataURL(file)
       } catch (error) {
         console.error('Error processing image:', error)
         const errorPhoto: Photo = {
@@ -106,11 +157,16 @@ export default function ImprovedPhotoUploadManager({
           order: photos.length,
           error: error instanceof Error ? error.message : 'Failed to process image'
         }
-        setPhotos(prev => [...prev, errorPhoto])
+        if (isMounted) {
+          setPhotos(prev => [...prev, errorPhoto])
+          setIsInitialized(true)
+        }
       }
     }
     
-    setIsProcessing(false)
+    if (isMounted) {
+      setIsProcessing(false)
+    }
   }
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -276,6 +332,7 @@ export default function ImprovedPhotoUploadManager({
                     {photo.error}
                   </p>
                   <button
+                    type="button"
                     onClick={() => removePhoto(photo.id)}
                     className="mt-2 text-red-500 hover:text-red-700"
                   >
@@ -286,16 +343,16 @@ export default function ImprovedPhotoUploadManager({
                 // Normal photo
                 <>
                   <img
-                    src={photo.processed.original}
+                    src={photo.processed.card}
                     alt={`Upload ${index + 1}`}
                     className="w-full h-full object-cover"
                     style={{ imageRendering: 'auto' }}
                     onError={(e) => {
-                      console.error('Image failed to load:', photo.processed.original)
+                      console.error('Image failed to load:', photo.processed.card)
                       console.error('Photo data:', photo)
                     }}
                     onLoad={() => {
-                      console.log('Image loaded successfully:', photo.processed.original)
+                      console.log('Image loaded successfully:', photo.processed.card)
                     }}
                   />
                   
@@ -303,6 +360,7 @@ export default function ImprovedPhotoUploadManager({
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1">
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation()
                           movePhoto(photo.id, 'up')
@@ -314,6 +372,7 @@ export default function ImprovedPhotoUploadManager({
                         <ChevronUp className="w-4 h-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation()
                           movePhoto(photo.id, 'down')
@@ -325,6 +384,7 @@ export default function ImprovedPhotoUploadManager({
                         <ChevronDown className="w-4 h-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation()
                           openCropModal(photo)
@@ -335,6 +395,7 @@ export default function ImprovedPhotoUploadManager({
                         <Crop className="w-4 h-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation()
                           removePhoto(photo.id)
@@ -374,7 +435,7 @@ export default function ImprovedPhotoUploadManager({
       <ImprovedCropModal
         isOpen={isCropModalOpen}
         onClose={closeCropModal}
-        imageSrc={cropPhoto?.processed.original || ''}
+        imageSrc={cropPhoto?.processed.card || ''}
         aspectRatio={aspectRatio}
         onCrop={applyCrop}
       />

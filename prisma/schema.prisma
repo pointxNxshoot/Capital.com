@@ -46,6 +46,12 @@ model Company {
   advisorId   String?
   advisor     Advisor? @relation(fields: [advisorId], references: [id])
   
+  // User tracking
+  createdBy   String?  // Simple identifier for who created the listing
+  
+  // Listings relationship
+  listings    Listing[]
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -75,4 +81,25 @@ model Advisor {
   companies   Company[]
 
   @@map("advisors")
+}
+
+model Listing {
+  id          Int       @id @default(autoincrement())
+  slug        String    @unique
+  title       String
+  description String    @default("")
+  price       Int?
+  address     String
+  suburb      String?
+  state       String?
+  postcode    String?
+  latitude    Float
+  longitude   Float
+  images      String    @default("[]") // JSON string for SQLite compatibility
+  companyId   String?
+  company     Company?  @relation(fields: [companyId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("listings")
 }

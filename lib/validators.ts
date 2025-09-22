@@ -24,6 +24,7 @@ export const companySchema = z.object({
   photos: z.array(z.string()).default([]),
   projectPhotos: z.array(z.string()).default([]),
   advisorId: z.string().optional().nullable(),
+  createdBy: z.string().optional(),
 })
 
 export const advisorSchema = z.object({
@@ -100,3 +101,28 @@ export const listingFormSchema = z.object({
 })
 
 export type ListingFormInput = z.infer<typeof listingFormSchema>
+
+// Listing schemas for the new listings API
+export const photoUrl = z.string().url().trim();
+
+export const listingSchema = z.object({
+  title: z.string().min(1, "Title is required").max(140),
+  description: z.string().max(10_000).optional().default(""),
+  price: z.number().int().nonnegative().optional(),
+  address: z.string().min(1, "Address is required"),
+  suburb: z.string().optional(),
+  state: z.string().optional(),
+  postcode: z.string().optional(),
+  latitude: z.number().gte(-90).lte(90),
+  longitude: z.number().gte(-180).lte(180),
+  images: z.array(photoUrl).default([]),
+  companyId: z.string().optional(), // if linking to a company
+});
+
+export const listingUpdateSchema = listingSchema.partial().refine(
+  (val) => Object.keys(val).length > 0,
+  { message: "No fields to update" }
+);
+
+export type ListingInput = z.infer<typeof listingSchema>
+export type ListingUpdateInput = z.infer<typeof listingUpdateSchema>

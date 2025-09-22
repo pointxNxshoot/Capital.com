@@ -104,23 +104,18 @@ const advisorSpecialties = [
   'Exit Planning'
 ]
 
-interface WorkingEnhancedListingFormProps {
-  initialData?: any
-  onSave?: (data: any) => void
-  saving?: boolean
-  mode?: 'create' | 'edit'
-  onSaveComplete?: () => void
+interface EditListingFormProps {
+  initialData: any
+  onSave: (data: any) => void
+  saving: boolean
 }
 
-export default function WorkingEnhancedListingForm({ 
+export default function EditListingForm({ 
   initialData, 
   onSave, 
-  saving = false, 
-  mode = 'create',
-  onSaveComplete
-}: WorkingEnhancedListingFormProps) {
+  saving = false
+}: EditListingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
   const [hasAdvisor, setHasAdvisor] = useState<boolean | null>(null)
   const [selectedSector, setSelectedSector] = useState('')
   const [selectedIndustry, setSelectedIndustry] = useState('')
@@ -135,7 +130,6 @@ export default function WorkingEnhancedListingForm({
     register,
     handleSubmit,
     formState: { errors },
-    reset,
     setValue,
     watch
   } = useForm<ListingFormInput>({
@@ -150,9 +144,9 @@ export default function WorkingEnhancedListingForm({
     }
   })
 
-  // Initialize form with initialData when in edit mode
+  // Initialize form with initialData
   useEffect(() => {
-    if (initialData && mode === 'edit') {
+    if (initialData) {
       // Set form values
       Object.keys(initialData).forEach(key => {
         if (key in initialData) {
@@ -167,11 +161,12 @@ export default function WorkingEnhancedListingForm({
       if (initialData.specialties) setAdvisorSpecialties(initialData.specialties)
       if (initialData.advisorId) setHasAdvisor(true)
       
-      // Convert photos to the expected format for ImprovedPhotoUploadManager
+      // Convert photos to the expected format
       if (initialData.photos && initialData.photos.length > 0) {
         const photoObjects = initialData.photos.map((url: string, index: number) => ({
           id: `photo-${index}`,
-          file: null as any,
+          file: null,
+          preview: url,
           processed: {
             thumbnail: url,
             card: url,
@@ -179,8 +174,7 @@ export default function WorkingEnhancedListingForm({
             display: url,
             fullscreen: url,
             original: url
-          },
-          order: index
+          }
         }))
         setCompanyPhotos(photoObjects)
       }
@@ -188,7 +182,8 @@ export default function WorkingEnhancedListingForm({
       if (initialData.projectPhotos && initialData.projectPhotos.length > 0) {
         const projectPhotoObjects = initialData.projectPhotos.map((url: string, index: number) => ({
           id: `project-photo-${index}`,
-          file: null as any,
+          file: null,
+          preview: url,
           processed: {
             thumbnail: url,
             card: url,
@@ -196,17 +191,17 @@ export default function WorkingEnhancedListingForm({
             display: url,
             fullscreen: url,
             original: url
-          },
-          order: index
+          }
         }))
         setProjectPhotos(projectPhotoObjects)
       }
 
-      // Handle company logo
+      // Handle logo
       if (initialData.logoUrl) {
-        const logoObject = {
+        setCompanyLogo([{
           id: 'logo-0',
-          file: null as any,
+          file: null,
+          preview: initialData.logoUrl,
           processed: {
             thumbnail: initialData.logoUrl,
             card: initialData.logoUrl,
@@ -214,48 +209,18 @@ export default function WorkingEnhancedListingForm({
             display: initialData.logoUrl,
             fullscreen: initialData.logoUrl,
             original: initialData.logoUrl
-          },
-          order: 0
-        }
-        setCompanyLogo([logoObject])
-      }
-
-      // Handle advisor headshot
-      if (initialData.headshotUrl) {
-        const headshotObject = {
-          id: 'headshot-0',
-          file: null as any,
-          processed: {
-            thumbnail: initialData.headshotUrl,
-            card: initialData.headshotUrl,
-            hero: initialData.headshotUrl,
-            display: initialData.headshotUrl,
-            fullscreen: initialData.headshotUrl,
-            original: initialData.headshotUrl
-          },
-          order: 0
-        }
-        setAdvisorHeadshot([headshotObject])
+          }
+        }])
       }
     }
-  }, [initialData, mode, setValue])
+  }, [initialData, setValue])
 
   // Reset isSubmitting when saving completes
   useEffect(() => {
-    if (mode === 'edit' && !saving && isSubmitting) {
-      setIsSubmitting(false)
-      if (onSaveComplete) {
-        onSaveComplete()
-      }
-    }
-  }, [saving, isSubmitting, mode, onSaveComplete])
-
-  // Reset isSubmitting when saving changes from true to false
-  useEffect(() => {
-    if (mode === 'edit' && saving === false && isSubmitting) {
+    if (!saving && isSubmitting) {
       setIsSubmitting(false)
     }
-  }, [saving, isSubmitting, mode])
+  }, [saving, isSubmitting])
 
   const handleTagToggle = (tag: string) => {
     const newTags = selectedTags.includes(tag)
@@ -276,57 +241,6 @@ export default function WorkingEnhancedListingForm({
   }
 
   const onSubmit = async (data: ListingFormInput) => {
-    if (mode === 'edit' && onSave) {
-      // In edit mode, call the onSave callback
-      setIsSubmitting(true)
-      
-      // Process logo for edit mode
-      let logoUrl = data.logoUrl || ''
-      if (companyLogo.length > 0) {
-        logoUrl = companyLogo[0].processed.card
-      }
-      
-      // Process advisor headshot for edit mode
-      let headshotUrl = data.headshotUrl || ''
-      if (advisorHeadshot.length > 0) {
-        headshotUrl = advisorHeadshot[0].processed.card
-      }
-      
-      // Process photos for edit mode - keep existing URLs and add new ones
-      const processedPhotos = companyPhotos.map(photo => {
-        // If it's an existing photo (has no file), use the processed URL
-        if (!photo.file) {
-          return photo.processed.card
-        }
-        // If it's a new photo, use the processed URL
-        return photo.processed.card
-      })
-      console.log('Edit mode - Company photos URLs:', processedPhotos.map(url => url.substring(0, 50) + '...'))
-      
-      const processedProjectPhotos = projectPhotos.map(photo => {
-        // If it's an existing photo (has no file), use the processed URL
-        if (!photo.file) {
-          return photo.processed.card
-        }
-        // If it's a new photo, use the processed URL
-        return photo.processed.card
-      })
-      console.log('Edit mode - Project photos URLs:', processedProjectPhotos.map(url => url.substring(0, 50) + '...'))
-      
-      const formData = {
-        ...data,
-        logoUrl,
-        headshotUrl,
-        tags: selectedTags,
-        photos: processedPhotos,
-        projectPhotos: processedProjectPhotos,
-        specialties: advisorSpecialties,
-      }
-      onSave(formData)
-      return
-    }
-
-    // Original create mode logic
     setIsSubmitting(true)
     
     try {
@@ -349,44 +263,46 @@ export default function WorkingEnhancedListingForm({
 
       // Convert company photos to base64 using the card preset
       const companyPhotosUrls = companyPhotos.map(photo => photo.processed.card)
-      console.log('Company photos URLs:', companyPhotosUrls.map(url => url.substring(0, 50) + '...'))
       
       // Convert project photos to base64 using the card preset
       const projectPhotosUrls = projectPhotos.map(photo => photo.processed.card)
-      console.log('Project photos URLs:', projectPhotosUrls.map(url => url.substring(0, 50) + '...'))
 
-      // First, create advisor if they have one
-      let advisorId = null
+      // Handle advisor creation/update if they have one
+      let advisorId = initialData.advisorId || null
       if (hasAdvisor && data.firmName) {
-        const advisorResponse = await fetch('/api/advisors', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            firmName: data.firmName,
-            teamLead: data.teamLead,
-            headshotUrl: headshotUrl,
-            email: data.advisorEmail,
-            phone: data.advisorPhone,
-            street: data.advisorStreet,
-            suburb: data.advisorSuburb,
-            state: data.advisorState,
-            postcode: data.advisorPostcode,
-            country: data.advisorCountry,
-            websiteUrl: data.advisorWebsiteUrl,
-            description: data.advisorDescription,
-            specialties: advisorSpecialties,
-          }),
-        })
+        // If we already have an advisor ID, we might want to update the advisor
+        // For now, we'll keep the existing advisor ID or create a new one
+        if (!advisorId) {
+          const advisorResponse = await fetch('/api/advisors', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              firmName: data.firmName,
+              teamLead: data.teamLead,
+              headshotUrl: headshotUrl,
+              email: data.advisorEmail,
+              phone: data.advisorPhone,
+              street: data.advisorStreet,
+              suburb: data.advisorSuburb,
+              state: data.advisorState,
+              postcode: data.advisorPostcode,
+              country: data.advisorCountry,
+              websiteUrl: data.advisorWebsiteUrl,
+              description: data.advisorDescription,
+              specialties: advisorSpecialties,
+            }),
+          })
 
-        if (advisorResponse.ok) {
-          const advisorData = await advisorResponse.json()
-          advisorId = advisorData.advisor.id
+          if (advisorResponse.ok) {
+            const advisorData = await advisorResponse.json()
+            advisorId = advisorData.advisor.id
+          }
         }
       }
 
-      // Then create the company
+      // Prepare the company data for update
       const companyData = {
         name: data.name,
         sector: data.sector,
@@ -411,90 +327,25 @@ export default function WorkingEnhancedListingForm({
         photos: companyPhotosUrls,
         projectPhotos: projectPhotosUrls,
         advisorId: advisorId,
-        createdBy: (() => {
-          // Get or create a consistent user ID
-          if (typeof window !== 'undefined') {
-            let userId = localStorage.getItem('userId')
-            if (!userId) {
-              userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-              localStorage.setItem('userId', userId)
-            }
-            return userId
-          }
-          return 'user_' + Date.now()
-        })()
+        createdBy: initialData.createdBy // Keep the original createdBy
       }
 
       console.log('Submitting company data:', companyData)
 
-      const response = await fetch('/api/companies', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(companyData),
-      })
-
-      if (response.ok) {
-        setIsSubmitted(true)
-        reset()
-        setSelectedTags([])
-        setAdvisorSpecialties([])
-        setHasAdvisor(null)
-        setSelectedSector('')
-        setSelectedIndustry('')
-        setCompanyLogo([])
-        setAdvisorHeadshot([])
-        setCompanyPhotos([])
-        setProjectPhotos([])
-      } else {
-        const errorData = await response.json()
-        console.error('Error response:', errorData)
-        throw new Error('Failed to submit listing')
-      }
+      // Call the onSave callback with the prepared data
+      onSave(companyData)
     } catch (error) {
-      console.error('Error submitting listing:', error)
-      alert('Failed to submit listing. Please try again.')
-    } finally {
+      console.error('Error preparing listing data:', error)
+      alert('Failed to prepare listing data. Please try again.')
       setIsSubmitting(false)
     }
-  }
-
-  if (isSubmitted) {
-    return (
-      <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
-        <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <h3 className="text-lg font-semibold text-green-900 mb-2">Listing Submitted Successfully!</h3>
-        <p className="text-green-700 mb-4">
-          Your company listing has been submitted and is pending review. We'll notify you once it's published.
-        </p>
-        <div className="flex space-x-3">
-          <button
-            onClick={() => setIsSubmitted(false)}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-          >
-            Submit Another Listing
-          </button>
-          <a
-            href="/my-listings"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            View My Listings
-          </a>
-        </div>
-      </div>
-    )
   }
 
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">List Your Company</h1>
-        <p className="text-gray-600">Submit your company for equity investment opportunities</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Your Company Listing</h1>
+        <p className="text-gray-600">Update your company details and photos</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -581,8 +432,6 @@ export default function WorkingEnhancedListingForm({
                 aspectRatio={0.8}
                 minDimensions={{ width: 200, height: 160 }}
                 className="w-full"
-                initialPhotos={advisorHeadshot}
-                instanceId="create-advisor-headshot"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Upload a professional headshot. Minimum size: 200×160px. Click to crop and focus on the face.
@@ -767,8 +616,6 @@ export default function WorkingEnhancedListingForm({
               aspectRatio={1}
               minDimensions={{ width: 200, height: 200 }}
               className="w-full"
-              initialPhotos={companyLogo}
-              instanceId="create-company-logo"
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload a square logo for best results. Minimum size: 200×200px. Click to crop and adjust.
@@ -785,8 +632,6 @@ export default function WorkingEnhancedListingForm({
               maxPhotos={20}
               aspectRatio={4/3}
               className="w-full"
-              initialPhotos={companyPhotos}
-              instanceId="create-company-photos"
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload up to 20 photos of your company, facilities, or team. Minimum size: 400×300px.
@@ -926,8 +771,6 @@ export default function WorkingEnhancedListingForm({
               maxPhotos={15}
               aspectRatio={4/3}
               className="w-full"
-              initialPhotos={projectPhotos}
-              instanceId="create-project-photos"
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload photos related to your project, expansion plans, or what you plan to acquire. Minimum size: 400×300px.
@@ -1093,13 +936,13 @@ export default function WorkingEnhancedListingForm({
         </div>
 
         {/* Submit Button */}
-        <div className="pt-8 mt-4">
+        <div className="pt-6">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || saving}
             className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isSubmitting ? (mode === 'edit' ? 'Updating...' : 'Submitting...') : (mode === 'edit' ? 'Update Listing' : 'Submit Listing')}
+            {isSubmitting || saving ? 'Updating...' : 'Update Listing'}
           </button>
         </div>
       </form>

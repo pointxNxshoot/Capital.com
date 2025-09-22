@@ -426,6 +426,7 @@ export default function ImprovedCropModal({
             {aspectRatio === 1 ? 'Crop Profile Picture' : 'Crop Image'}
           </h2>
           <button
+            type="button"
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 text-2xl"
           >
@@ -490,6 +491,7 @@ export default function ImprovedCropModal({
         <div className="flex justify-between">
           <div className="flex space-x-2">
             <button
+              type="button"
               onClick={resetCropSelection}
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
             >
@@ -498,12 +500,14 @@ export default function ImprovedCropModal({
           </div>
           <div className="flex space-x-2">
             <button
+              type="button"
               onClick={onClose}
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={applyCrop}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             >

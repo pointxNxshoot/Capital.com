@@ -26,6 +26,10 @@ export async function GET(
         { status: 404 }
       )
     }
+    
+    console.log('Found company:', company.name)
+    console.log('Company photos:', company.photos)
+    console.log('Company project photos:', company.projectPhotos)
 
     // Increment view count
     await prisma.company.update({
@@ -40,6 +44,10 @@ export async function GET(
       photos: JSON.parse(company.photos || '[]'),
       projectPhotos: JSON.parse(company.projectPhotos || '[]'),
     }
+    
+    console.log('Returning company with parsed data:')
+    console.log('Photos:', companyWithParsedData.photos)
+    console.log('Project photos:', companyWithParsedData.projectPhotos)
 
     return NextResponse.json({ company: companyWithParsedData })
   } catch (error) {

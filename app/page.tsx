@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Building2, TrendingUp, Users, MapPin, ArrowRight } from 'lucide-react'
-import SearchBar from '@/components/SearchBar'
+import EnhancedSearchBar from '@/components/EnhancedSearchBar'
 import ImprovedCompanyCard from '@/components/ImprovedCompanyCard'
 
 const categories = [
@@ -152,7 +152,10 @@ export default function Home() {
             
             {/* Hero Search */}
             <div className="max-w-2xl mx-auto mb-12">
-              <SearchBar placeholder="Search companies by name, category, or location..." />
+              <EnhancedSearchBar 
+                variant="hero" 
+                placeholder="Search companies by name, category, or location..." 
+              />
             </div>
 
             {/* Quick Stats */}

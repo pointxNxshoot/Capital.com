@@ -118,6 +118,9 @@ export default function CompanyDetailPage() {
         const response = await fetch(`/api/companies/${params.slug}`)
         if (response.ok) {
           const data = await response.json()
+          console.log('Received company data:', data)
+          console.log('Company photos from API:', data.company.photos)
+          console.log('Company project photos from API:', data.company.projectPhotos)
           setCompany(data.company)
           setSaved(savedCompanies.includes(data.company.id))
         } else {
@@ -298,11 +301,15 @@ export default function CompanyDetailPage() {
             {company.photos && company.photos.length > 0 ? (
               <div className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Facility & Location</h2>
+                {console.log('Company photos:', company.photos)}
                 <RealestateGallery 
-                  images={company.photos.map((url: string, index: number) => ({
-                    src: url,
-                    alt: `${company.name} photo ${index + 1}`
-                  }))}
+                  images={company.photos.map((url: string, index: number) => {
+                    console.log(`Photo ${index + 1}:`, url.substring(0, 50) + '...')
+                    return {
+                      src: url,
+                      alt: `${company.name} photo ${index + 1}`
+                    }
+                  })}
                 />
               </div>
             ) : (
@@ -391,11 +398,15 @@ export default function CompanyDetailPage() {
             {company.projectPhotos && company.projectPhotos.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Project & Expansion Plans</h2>
+                {console.log('Company project photos:', company.projectPhotos)}
                 <RealestateGallery 
-                  images={company.projectPhotos.map((url: string, index: number) => ({
-                    src: url,
-                    alt: `${company.name} project photo ${index + 1}`
-                  }))}
+                  images={company.projectPhotos.map((url: string, index: number) => {
+                    console.log(`Project photo ${index + 1}:`, url.substring(0, 50) + '...')
+                    return {
+                      src: url,
+                      alt: `${company.name} project photo ${index + 1}`
+                    }
+                  })}
                 />
               </div>
             )}
