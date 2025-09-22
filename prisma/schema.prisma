@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  sector      String   // e.g., Technology, Healthcare, Finance
+  industry    String   // e.g., Software, Medical Devices, Banking
+  subIndustry String?  // e.g., SaaS, Digital Health, Investment Banking
+  description String?
+  logoUrl     String?
+  websiteUrl  String?
+  email       String?
+  phone       String?
+  street      String?
+  suburb      String?
+  state       String?
+  postcode    String?
+  country     String   @default("Australia")
+  latitude    Float?   // For Google Maps
+  longitude   Float?   // For Google Maps
+  tags        String   @default("[]") // JSON string for SQLite compatibility
+  status      String   @default("pending") // pending | published | archived
+  views       Int      @default(0)
+  
+  // New fields for equity raising
+  amountSeeking String? // e.g., "$1M - $5M", "Over $10M"
+  raisingReason String? // e.g., "Expansion", "Working Capital", "Acquisition"
+  properties   String?  // Description of company properties/assets
+  
+  // Photos
+  photos      String   @default("[]") // JSON string for photos array
+  projectPhotos String @default("[]") // JSON string for project photos array
+  
+  // Advisor relationship
+  advisorId   String?
+  advisor     Advisor? @relation(fields: [advisorId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("companies")
+}
+
+model Advisor {
+  id          String   @id @default(cuid())
+  firmName    String
+  teamLead    String
+  headshotUrl String?
+  email       String
+  phone       String
+  street      String?
+  suburb      String?
+  state       String?
+  postcode    String?
+  country     String   @default("Australia")
+  websiteUrl  String?
+  description String?
+  specialties String   @default("[]") // JSON string for specialties
+  status      String   @default("active") // active | inactive
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  companies   Company[]
+
+  @@map("advisors")
+}
