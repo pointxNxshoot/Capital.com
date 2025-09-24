@@ -5,7 +5,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { listingFormSchema, type ListingFormInput } from '@/lib/validators'
 import { Building2, Upload, X, User, MapPin, DollarSign, FileText } from 'lucide-react'
-import FixedPhotoUploadManager from './FixedPhotoUploadManager'
+import EnhancedPhotoUploadManager from './EnhancedPhotoUploadManager'
+import { geocodeAddressClient } from '@/lib/geocoding'
 
 const sectors = [
   'Technology',
@@ -130,6 +131,8 @@ export default function WorkingEnhancedListingForm({
   const [advisorHeadshot, setAdvisorHeadshot] = useState<{id: string, url: string, order: number}[]>([])
   const [companyPhotos, setCompanyPhotos] = useState<{id: string, url: string, order: number}[]>([])
   const [projectPhotos, setProjectPhotos] = useState<{id: string, url: string, order: number}[]>([])
+  const [coordinates, setCoordinates] = useState<{latitude: number, longitude: number} | null>(null)
+  const [isGeocoding, setIsGeocoding] = useState(false)
 
   const {
     register,
@@ -167,7 +170,7 @@ export default function WorkingEnhancedListingForm({
       if (initialData.specialties) setAdvisorSpecialties(initialData.specialties)
       if (initialData.advisorId) setHasAdvisor(true)
       
-      // Convert photos to the expected format for FixedPhotoUploadManager
+      // Convert photos to the expected format for EnhancedPhotoUploadManager
       if (initialData.photos && initialData.photos.length > 0) {
         const photoObjects = initialData.photos.map((url: string, index: number) => ({
           id: `photo-${index}`,
@@ -243,6 +246,29 @@ export default function WorkingEnhancedListingForm({
     setValue('specialties', newSpecialties)
   }
 
+  // Geocode address to get coordinates
+  const geocodeAddress = async (street: string, suburb: string, state: string, postcode: string) => {
+    const addressParts = [street, suburb, state, postcode].filter(Boolean)
+    if (addressParts.length === 0) return null
+
+    const fullAddress = addressParts.join(', ')
+    setIsGeocoding(true)
+    
+    try {
+      const result = await geocodeAddressClient(fullAddress)
+      if (result) {
+        setCoordinates({ latitude: result.latitude, longitude: result.longitude })
+        return result
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error)
+    } finally {
+      setIsGeocoding(false)
+    }
+    
+    return null
+  }
+
   const onSubmit = async (data: ListingFormInput) => {
     if (mode === 'edit' && onSave) {
       // In edit mode, call the onSave callback
@@ -309,6 +335,22 @@ export default function WorkingEnhancedListingForm({
       const projectPhotosUrls = projectPhotos.map(photo => photo.url)
       console.log('Project photos URLs:', projectPhotosUrls)
 
+      // Geocode address to get coordinates
+      let latitude = data.latitude
+      let longitude = data.longitude
+      
+      if (!latitude || !longitude) {
+        console.log('Geocoding address...')
+        const geocodeResult = await geocodeAddress(data.street || '', data.suburb || '', data.state || '', data.postcode || '')
+        if (geocodeResult) {
+          latitude = geocodeResult.latitude
+          longitude = geocodeResult.longitude
+          console.log('Geocoding successful:', { latitude, longitude })
+        } else {
+          console.warn('Geocoding failed, coordinates will be null')
+        }
+      }
+
       // First, create advisor if they have one
       let advisorId = null
       if (hasAdvisor && data.firmName) {
@@ -356,8 +398,8 @@ export default function WorkingEnhancedListingForm({
         state: data.state,
         postcode: data.postcode,
         country: data.country,
-        latitude: data.latitude,
-        longitude: data.longitude,
+        latitude: latitude,
+        longitude: longitude,
         tags: selectedTags,
         amountSeeking: data.amountSeeking,
         raisingReason: data.raisingReason,
@@ -529,11 +571,14 @@ export default function WorkingEnhancedListingForm({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Headshot
               </label>
-              <FixedPhotoUploadManager
+              <EnhancedPhotoUploadManager
                 onPhotosChange={setAdvisorHeadshot}
                 maxPhotos={1}
                 className="w-full"
                 initialPhotos={advisorHeadshot}
+                aspectRatio={0.8}
+                outputWidth={400}
+                outputHeight={500}
               />
               <p className="text-xs text-gray-500 mt-1">
                 Upload a professional headshot. Minimum size: 200×160px. Click to crop and focus on the face.
@@ -712,11 +757,14 @@ export default function WorkingEnhancedListingForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Company Logo
             </label>
-            <FixedPhotoUploadManager
+            <EnhancedPhotoUploadManager
               onPhotosChange={setCompanyLogo}
               maxPhotos={1}
               className="w-full"
               initialPhotos={companyLogo}
+              aspectRatio={1}
+              outputWidth={400}
+              outputHeight={400}
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload a square logo for best results. Minimum size: 200×200px. Click to crop and adjust.
@@ -728,11 +776,14 @@ export default function WorkingEnhancedListingForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Company Photos
             </label>
-            <FixedPhotoUploadManager
+            <EnhancedPhotoUploadManager
               onPhotosChange={setCompanyPhotos}
               maxPhotos={20}
               className="w-full"
               initialPhotos={companyPhotos}
+              aspectRatio={4/3}
+              outputWidth={1200}
+              outputHeight={900}
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload up to 20 photos of your company, facilities, or team. Minimum size: 400×300px.
@@ -867,11 +918,14 @@ export default function WorkingEnhancedListingForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Project Photos
             </label>
-            <FixedPhotoUploadManager
+            <EnhancedPhotoUploadManager
               onPhotosChange={setProjectPhotos}
               maxPhotos={15}
               className="w-full"
               initialPhotos={projectPhotos}
+              aspectRatio={4/3}
+              outputWidth={1200}
+              outputHeight={900}
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload photos related to your project, expansion plans, or what you plan to acquire. Minimum size: 400×300px.
@@ -1011,6 +1065,27 @@ export default function WorkingEnhancedListingForm({
               />
             </div>
           </div>
+
+          {/* Geocoding Status */}
+          {isGeocoding && (
+            <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                <span className="text-sm text-blue-700">Getting location coordinates...</span>
+              </div>
+            </div>
+          )}
+
+          {coordinates && (
+            <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center">
+                <MapPin className="h-4 w-4 text-green-600 mr-2" />
+                <span className="text-sm text-green-700">
+                  Location found: {coordinates.latitude.toFixed(6)}, {coordinates.longitude.toFixed(6)}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Tags */}
           <div className="mb-6">

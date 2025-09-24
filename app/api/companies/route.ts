@@ -136,19 +136,19 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Add to Meilisearch index (only if status is published)
-    if (company.status === 'published') {
-      try {
-        await searchService.addListing({
-          ...company,
-          tags: validatedData.tags,
-          photos: validatedData.photos,
-          projectPhotos: validatedData.projectPhotos,
-        })
-      } catch (error) {
-        console.error('Error adding listing to search index:', error)
-        // Don't fail the request if search indexing fails
-      }
+    // Add to Meilisearch index (both pending and published)
+    try {
+      console.log('Adding listing to search index:', company.name, 'Status:', company.status)
+      await searchService.addListing({
+        ...company,
+        tags: validatedData.tags,
+        photos: validatedData.photos,
+        projectPhotos: validatedData.projectPhotos,
+      })
+      console.log('Successfully added listing to search index')
+    } catch (error) {
+      console.error('Error adding listing to search index:', error)
+      // Don't fail the request if search indexing fails
     }
 
     return NextResponse.json(
