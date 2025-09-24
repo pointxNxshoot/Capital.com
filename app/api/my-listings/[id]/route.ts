@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { companySchema } from '@/lib/validators'
+import { searchService } from '@/lib/searchService'
 
 // GET /api/my-listings/[id] - Get a specific user listing
 export async function GET(
@@ -88,6 +89,7 @@ export async function PUT(
     }
 
     // Update the company
+    console.log('Updating company in database:', resolvedParams.id, 'Owner:', createdBy)
     const updatedCompany = await prisma.company.update({
       where: { id: resolvedParams.id },
       data: {
@@ -99,6 +101,21 @@ export async function PUT(
         updatedAt: new Date(),
       },
     })
+    console.log('Successfully updated company in database:', resolvedParams.id)
+
+    // Update the search index
+    try {
+      await searchService.addListing({
+        ...updatedCompany,
+        tags: validatedData.tags,
+        photos: validatedData.photos,
+        projectPhotos: validatedData.projectPhotos,
+      })
+      console.log('Successfully updated listing in search index:', resolvedParams.id)
+    } catch (error) {
+      console.error('Error updating listing in search index:', error)
+      // Don't fail the request if search index update fails
+    }
 
     return NextResponse.json({
       company: {
@@ -155,10 +172,21 @@ export async function DELETE(
       )
     }
 
-    // Delete the company
+    // Delete the company from database
+    console.log('Deleting company from database:', resolvedParams.id, 'Owner:', createdBy)
     await prisma.company.delete({
       where: { id: resolvedParams.id },
     })
+    console.log('Successfully deleted company from database:', resolvedParams.id)
+
+    // Remove from Meilisearch index
+    try {
+      await searchService.removeListing(resolvedParams.id)
+      console.log('Successfully removed listing from search index:', resolvedParams.id)
+    } catch (error) {
+      console.error('Error removing listing from search index:', error)
+      // Don't fail the request if search index cleanup fails
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

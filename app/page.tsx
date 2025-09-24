@@ -6,14 +6,6 @@ import { Building2, TrendingUp, Users, MapPin, ArrowRight } from 'lucide-react'
 import EnhancedSearchBar from '@/components/EnhancedSearchBar'
 import ImprovedCompanyCard from '@/components/ImprovedCompanyCard'
 
-const categories = [
-  'Technology',
-  'Healthcare', 
-  'Finance',
-  'Manufacturing',
-  'Retail',
-  'Real Estate'
-]
 
 const cities = [
   'Sydney',
@@ -136,8 +128,8 @@ export default function Home() {
             backgroundImage: "url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2070')"
           }}
         />
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/80 to-indigo-900/80" />
+        {/* Light Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/15" />
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
@@ -186,30 +178,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Categories Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Browse by Category</h2>
-            <p className="text-gray-600">Find companies in your area of interest</p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {categories.map((category) => (
-              <Link
-                key={category}
-                href={`/companies?sector=${encodeURIComponent(category)}`}
-                className="bg-gray-50 hover:bg-blue-50 rounded-lg p-4 text-center transition-colors group min-h-[120px] flex flex-col justify-center"
-              >
-                <div className="text-lg font-bold text-gray-900 group-hover:text-blue-600 mb-2 break-words">
-                  {category}
-                </div>
-                <div className="text-xs text-gray-500">View companies</div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Popular Cities */}
       <section className="py-16 bg-gray-50">

@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { listingFormSchema, type ListingFormInput } from '@/lib/validators'
 import { Building2, Upload, X, User, MapPin, DollarSign, FileText } from 'lucide-react'
-import ImprovedPhotoUploadManager from './ImprovedPhotoUploadManager'
+import EnhancedPhotoUploadManager from './EnhancedPhotoUploadManager'
 
 const sectors = [
   'Technology',
@@ -121,10 +121,20 @@ export default function EditListingForm({
   const [selectedIndustry, setSelectedIndustry] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [advisorSpecialties, setAdvisorSpecialties] = useState<string[]>([])
-  const [companyLogo, setCompanyLogo] = useState<any[]>([])
-  const [advisorHeadshot, setAdvisorHeadshot] = useState<any[]>([])
-  const [companyPhotos, setCompanyPhotos] = useState<any[]>([])
-  const [projectPhotos, setProjectPhotos] = useState<any[]>([])
+  const [companyLogo, setCompanyLogo] = useState<Photo[]>([])
+  const [advisorHeadshot, setAdvisorHeadshot] = useState<Photo[]>([])
+  const [companyPhotos, setCompanyPhotos] = useState<Photo[]>([])
+  const [projectPhotos, setProjectPhotos] = useState<Photo[]>([])
+
+  interface Photo {
+    id: string
+    url: string
+    file?: File
+    order: number
+    error?: string
+    uploading?: boolean
+    originalUrl?: string
+  }
 
   const {
     register,
@@ -165,16 +175,9 @@ export default function EditListingForm({
       if (initialData.photos && initialData.photos.length > 0) {
         const photoObjects = initialData.photos.map((url: string, index: number) => ({
           id: `photo-${index}`,
+          url: url,
           file: null,
-          preview: url,
-          processed: {
-            thumbnail: url,
-            card: url,
-            hero: url,
-            display: url,
-            fullscreen: url,
-            original: url
-          }
+          order: index
         }))
         setCompanyPhotos(photoObjects)
       }
@@ -182,16 +185,9 @@ export default function EditListingForm({
       if (initialData.projectPhotos && initialData.projectPhotos.length > 0) {
         const projectPhotoObjects = initialData.projectPhotos.map((url: string, index: number) => ({
           id: `project-photo-${index}`,
+          url: url,
           file: null,
-          preview: url,
-          processed: {
-            thumbnail: url,
-            card: url,
-            hero: url,
-            display: url,
-            fullscreen: url,
-            original: url
-          }
+          order: index
         }))
         setProjectPhotos(projectPhotoObjects)
       }
@@ -200,16 +196,19 @@ export default function EditListingForm({
       if (initialData.logoUrl) {
         setCompanyLogo([{
           id: 'logo-0',
+          url: initialData.logoUrl,
           file: null,
-          preview: initialData.logoUrl,
-          processed: {
-            thumbnail: initialData.logoUrl,
-            card: initialData.logoUrl,
-            hero: initialData.logoUrl,
-            display: initialData.logoUrl,
-            fullscreen: initialData.logoUrl,
-            original: initialData.logoUrl
-          }
+          order: 0
+        }])
+      }
+
+      // Handle advisor headshot
+      if (initialData.headshotUrl) {
+        setAdvisorHeadshot([{
+          id: 'headshot-0',
+          url: initialData.headshotUrl,
+          file: null,
+          order: 0
         }])
       }
     }
@@ -253,19 +252,19 @@ export default function EditListingForm({
       // Convert uploaded images to base64 for now (in production, upload to cloud storage)
       let logoUrl = data.logoUrl || ''
       if (companyLogo.length > 0) {
-        logoUrl = companyLogo[0].processed.card
+        logoUrl = companyLogo[0].url
       }
 
       let headshotUrl = data.headshotUrl || ''
       if (advisorHeadshot.length > 0) {
-        headshotUrl = advisorHeadshot[0].processed.card
+        headshotUrl = advisorHeadshot[0].url
       }
 
-      // Convert company photos to base64 using the card preset
-      const companyPhotosUrls = companyPhotos.map(photo => photo.processed.card)
+      // Convert company photos to URLs
+      const companyPhotosUrls = companyPhotos.map(photo => photo.url)
       
-      // Convert project photos to base64 using the card preset
-      const projectPhotosUrls = projectPhotos.map(photo => photo.processed.card)
+      // Convert project photos to URLs
+      const projectPhotosUrls = projectPhotos.map(photo => photo.url)
 
       // Handle advisor creation/update if they have one
       let advisorId = initialData.advisorId || null
@@ -426,12 +425,14 @@ export default function EditListingForm({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Headshot
               </label>
-              <ImprovedPhotoUploadManager
+              <EnhancedPhotoUploadManager
                 onPhotosChange={setAdvisorHeadshot}
                 maxPhotos={1}
                 aspectRatio={0.8}
-                minDimensions={{ width: 200, height: 160 }}
+                outputWidth={400}
+                outputHeight={500}
                 className="w-full"
+                initialPhotos={advisorHeadshot}
               />
               <p className="text-xs text-gray-500 mt-1">
                 Upload a professional headshot. Minimum size: 200×160px. Click to crop and focus on the face.
@@ -610,12 +611,14 @@ export default function EditListingForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Company Logo
             </label>
-            <ImprovedPhotoUploadManager
+            <EnhancedPhotoUploadManager
               onPhotosChange={setCompanyLogo}
               maxPhotos={1}
               aspectRatio={1}
-              minDimensions={{ width: 200, height: 200 }}
+              outputWidth={400}
+              outputHeight={400}
               className="w-full"
+              initialPhotos={companyLogo}
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload a square logo for best results. Minimum size: 200×200px. Click to crop and adjust.
@@ -627,11 +630,14 @@ export default function EditListingForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Company Photos
             </label>
-            <ImprovedPhotoUploadManager
+            <EnhancedPhotoUploadManager
               onPhotosChange={setCompanyPhotos}
               maxPhotos={20}
               aspectRatio={4/3}
+              outputWidth={1200}
+              outputHeight={900}
               className="w-full"
+              initialPhotos={companyPhotos}
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload up to 20 photos of your company, facilities, or team. Minimum size: 400×300px.
@@ -766,11 +772,14 @@ export default function EditListingForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Project Photos
             </label>
-            <ImprovedPhotoUploadManager
+            <EnhancedPhotoUploadManager
               onPhotosChange={setProjectPhotos}
               maxPhotos={15}
               aspectRatio={4/3}
+              outputWidth={1200}
+              outputHeight={900}
               className="w-full"
+              initialPhotos={projectPhotos}
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload photos related to your project, expansion plans, or what you plan to acquire. Minimum size: 400×300px.

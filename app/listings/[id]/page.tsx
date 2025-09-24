@@ -1,4 +1,5 @@
 import Link from "next/link";
+import GoogleMap from "@/components/GoogleMap";
 
 async function getListing(id: string) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -44,6 +45,20 @@ export default async function Page({ params }: { params: { id: string } }) {
                 <h3 className="font-semibold text-gray-700">Location</h3>
                 <p>Lat: {listing.latitude}, Lng: {listing.longitude}</p>
               </div>
+
+              {/* Map Section */}
+              {listing.latitude && listing.longitude && (
+                <div className="mt-6">
+                  <h3 className="font-semibold text-gray-700 mb-3">Map</h3>
+                  <GoogleMap
+                    latitude={listing.latitude}
+                    longitude={listing.longitude}
+                    companyName={listing.title}
+                    address={listing.address}
+                    className="w-full h-64 rounded-lg"
+                  />
+                </div>
+              )}
 
               {listing.description && (
                 <div>

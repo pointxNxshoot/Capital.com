@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { companySchema } from '@/lib/validators'
+import { searchService } from '@/lib/searchService'
 
 // GET /api/my-listings - Get user's listings
 export async function GET(request: NextRequest) {
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest) {
     const slug = base || `company-${Date.now()}`
 
     // Create the company
+    console.log('Creating company in database:', validatedData.name, 'Owner:', createdBy)
     const company = await prisma.company.create({
       data: {
         ...validatedData,
@@ -77,6 +79,21 @@ export async function POST(request: NextRequest) {
         status: 'pending',
       },
     })
+    console.log('Successfully created company in database:', company.id)
+
+    // Add to Meilisearch index
+    try {
+      await searchService.addListing({
+        ...company,
+        tags: validatedData.tags,
+        photos: validatedData.photos,
+        projectPhotos: validatedData.projectPhotos,
+      })
+      console.log('Successfully added listing to search index:', company.id)
+    } catch (error) {
+      console.error('Error adding listing to search index:', error)
+      // Don't fail the request if search indexing fails
+    }
 
     return NextResponse.json({
       company: {

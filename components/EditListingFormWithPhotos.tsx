@@ -6,7 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import Link from 'next/link'
 import { Building2 } from 'lucide-react'
-import ImprovedPhotoUploadManager from './ImprovedPhotoUploadManager'
+import EnhancedPhotoUploadManager from './EnhancedPhotoUploadManager'
+import { geocodeAddressClient } from '@/lib/geocoding'
 
 // Form validation schema
 const editFormSchema = z.object({
@@ -32,15 +33,12 @@ type EditFormData = z.infer<typeof editFormSchema>
 
 interface Photo {
   id: string
-  file: File | null
-  processed: {
-    thumbnail: string
-    card: string
-    hero: string
-    display: string
-    fullscreen: string
-    original: string
-  }
+  url: string
+  file?: File
+  order: number
+  error?: string
+  uploading?: boolean
+  originalUrl?: string
 }
 
 interface EditListingFormWithPhotosProps {
@@ -69,15 +67,9 @@ export default function EditListingFormWithPhotos({ initialData, onSave, saving 
       if (initialData.logoUrl) {
         setCompanyLogo([{
           id: 'logo-1',
+          url: initialData.logoUrl,
           file: null,
-          processed: {
-            thumbnail: initialData.logoUrl,
-            card: initialData.logoUrl,
-            hero: initialData.logoUrl,
-            display: initialData.logoUrl,
-            fullscreen: initialData.logoUrl,
-            original: initialData.logoUrl
-          }
+          order: 0
         }])
       }
 
@@ -85,15 +77,9 @@ export default function EditListingFormWithPhotos({ initialData, onSave, saving 
       if (initialData.photos && initialData.photos.length > 0) {
         const photoObjects = initialData.photos.map((url: string, index: number) => ({
           id: `photo-${index}`,
+          url: url,
           file: null,
-          processed: {
-            thumbnail: url,
-            card: url,
-            hero: url,
-            display: url,
-            fullscreen: url,
-            original: url
-          }
+          order: index
         }))
         setCompanyPhotos(photoObjects)
       }
@@ -102,15 +88,9 @@ export default function EditListingFormWithPhotos({ initialData, onSave, saving 
       if (initialData.projectPhotos && initialData.projectPhotos.length > 0) {
         const photoObjects = initialData.projectPhotos.map((url: string, index: number) => ({
           id: `project-${index}`,
+          url: url,
           file: null,
-          processed: {
-            thumbnail: url,
-            card: url,
-            hero: url,
-            display: url,
-            fullscreen: url,
-            original: url
-          }
+          order: index
         }))
         setProjectPhotos(photoObjects)
       }
@@ -118,17 +98,39 @@ export default function EditListingFormWithPhotos({ initialData, onSave, saving 
   }, [initialData, reset])
 
 
-  const onSubmit = (data: EditFormData) => {
+  const onSubmit = async (data: EditFormData) => {
     // Process photos for submission
-    const logoUrl = companyLogo.length > 0 ? companyLogo[0].processed.card : initialData.logoUrl || ''
-    const photos = companyPhotos.map(photo => photo.processed.card)
-    const projectPhotosData = projectPhotos.map(photo => photo.processed.card)
+    const logoUrl = companyLogo.length > 0 ? companyLogo[0].url : initialData.logoUrl || ''
+    const photos = companyPhotos.map(photo => photo.url)
+    const projectPhotosData = projectPhotos.map(photo => photo.url)
+
+    // Geocode address if coordinates are missing
+    let latitude = data.latitude
+    let longitude = data.longitude
+    
+    if (!latitude || !longitude) {
+      const addressParts = [data.street, data.suburb, data.state, data.postcode].filter(Boolean)
+      if (addressParts.length > 0) {
+        const fullAddress = addressParts.join(', ')
+        try {
+          const geocodeResult = await geocodeAddressClient(fullAddress)
+          if (geocodeResult) {
+            latitude = geocodeResult.latitude
+            longitude = geocodeResult.longitude
+          }
+        } catch (error) {
+          console.error('Geocoding error:', error)
+        }
+      }
+    }
 
     const formData = {
       ...data,
       logoUrl,
       photos,
-      projectPhotos: projectPhotosData
+      projectPhotos: projectPhotosData,
+      latitude,
+      longitude
     }
 
     onSave(formData)
@@ -166,14 +168,14 @@ export default function EditListingFormWithPhotos({ initialData, onSave, saving 
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Company Logo
             </label>
-            <ImprovedPhotoUploadManager
+            <EnhancedPhotoUploadManager
               onPhotosChange={setCompanyLogo}
               maxPhotos={1}
               aspectRatio={1}
-              minDimensions={{ width: 200, height: 200 }}
+              outputWidth={400}
+              outputHeight={400}
               className="w-full"
               initialPhotos={companyLogo}
-              instanceId="edit-logo"
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload a square logo for best results. Minimum size: 200×200px. Click to crop and adjust.
@@ -185,13 +187,14 @@ export default function EditListingFormWithPhotos({ initialData, onSave, saving 
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Company Photos
             </label>
-            <ImprovedPhotoUploadManager
+            <EnhancedPhotoUploadManager
               onPhotosChange={setCompanyPhotos}
               maxPhotos={20}
               aspectRatio={4/3}
+              outputWidth={1200}
+              outputHeight={900}
               className="w-full"
               initialPhotos={companyPhotos}
-              instanceId="edit-company-photos"
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload up to 20 photos of your company, facilities, or team. Minimum size: 400×300px.
@@ -449,13 +452,14 @@ export default function EditListingFormWithPhotos({ initialData, onSave, saving 
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Project Photos
             </label>
-            <ImprovedPhotoUploadManager
+            <EnhancedPhotoUploadManager
               onPhotosChange={setProjectPhotos}
               maxPhotos={15}
               aspectRatio={4/3}
+              outputWidth={1200}
+              outputHeight={900}
               className="w-full"
               initialPhotos={projectPhotos}
-              instanceId="edit-project-photos"
             />
             <p className="text-xs text-gray-500 mt-1">
               Upload photos related to your project, expansion plans, or what you plan to acquire. Minimum size: 400×300px.
