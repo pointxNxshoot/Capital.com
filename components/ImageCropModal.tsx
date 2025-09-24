@@ -30,9 +30,15 @@ export default function ImageCropModal({
   useEffect(() => {
     // Check if we're on the client side and if Cropper.js is available
     if (typeof window !== 'undefined') {
-      import('cropperjs').catch(() => {
+      try {
+        import('cropperjs').then(() => {
+          setUseSimpleCrop(false);
+        }).catch(() => {
+          setUseSimpleCrop(true);
+        });
+      } catch (error) {
         setUseSimpleCrop(true);
-      });
+      }
     }
   }, []);
 

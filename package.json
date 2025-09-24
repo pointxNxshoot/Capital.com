@@ -13,11 +13,13 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@cropper/elements": "^2.0.1",
+    "@cropper/utils": "^2.0.1",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^6.16.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "cropperjs": "^2.0.1",
+    "cropperjs": "^1.5.13",
     "lucide-react": "^0.544.0",
     "meilisearch": "^0.53.0",
     "next": "15.5.3",
@@ -29,6 +31,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/cropperjs": "^1.1.5",
     "@types/google.maps": "^3.58.1",
     "@types/node": "^20",
     "@types/react": "^19",

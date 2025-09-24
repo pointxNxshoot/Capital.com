@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { listingFormSchema, type ListingFormInput } from '@/lib/validators'
 import { Building2, Upload, X, User, MapPin, DollarSign, FileText } from 'lucide-react'
-import EnhancedPhotoUploadManager from './EnhancedPhotoUploadManager'
+import FixedPhotoUploadManager from './FixedPhotoUploadManager'
 import { geocodeAddressClient } from '@/lib/geocoding'
 
 const sectors = [
@@ -571,7 +571,7 @@ export default function WorkingEnhancedListingForm({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Headshot
               </label>
-              <EnhancedPhotoUploadManager
+              <FixedPhotoUploadManager
                 onPhotosChange={setAdvisorHeadshot}
                 maxPhotos={1}
                 className="w-full"
@@ -757,7 +757,7 @@ export default function WorkingEnhancedListingForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Company Logo
             </label>
-            <EnhancedPhotoUploadManager
+            <FixedPhotoUploadManager
               onPhotosChange={setCompanyLogo}
               maxPhotos={1}
               className="w-full"
@@ -776,7 +776,7 @@ export default function WorkingEnhancedListingForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Company Photos
             </label>
-            <EnhancedPhotoUploadManager
+            <FixedPhotoUploadManager
               onPhotosChange={setCompanyPhotos}
               maxPhotos={20}
               className="w-full"
@@ -918,7 +918,7 @@ export default function WorkingEnhancedListingForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Project Photos
             </label>
-            <EnhancedPhotoUploadManager
+            <FixedPhotoUploadManager
               onPhotosChange={setProjectPhotos}
               maxPhotos={15}
               className="w-full"
