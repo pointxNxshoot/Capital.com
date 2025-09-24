@@ -99,8 +99,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ├── app/                    # Next.js App Router pages
 │   ├── api/               # API routes
 │   ├── companies/         # Company listing pages
-│   ├── list/             # Company creation form
-│   └── gallery-demo/     # Gallery demonstration
+│   └── list/             # Company creation form
 ├── components/            # React components
 │   ├── ImprovedCropModal.tsx    # Advanced image cropping
 │   ├── RealestateGallery.tsx   # Property gallery with Swiper

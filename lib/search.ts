@@ -5,7 +5,10 @@ import { searchService } from './searchService'
 // Fallback to database search if Meilisearch is not available
 export function buildSearchWhere(params: SearchParams): Prisma.CompanyWhereInput {
   const where: Prisma.CompanyWhereInput = {
-    // Show all companies for now (no status filter)
+    // Show both pending and published companies
+    status: {
+      in: ['pending', 'published']
+    }
   }
 
   // Text search
@@ -75,6 +78,9 @@ export async function searchListings(params: SearchParams) {
       filters.push(`(${tagFilters})`)
     }
 
+    // Include both pending and published listings
+    filters.push(`status = "pending" OR status = "published"`)
+
     // Build sort array for Meilisearch
     const sort: string[] = []
     switch (params.sort) {
@@ -95,6 +101,12 @@ export async function searchListings(params: SearchParams) {
       offset: ((params.page || 1) - 1) * (params.limit || 20),
       filters: filters.length > 0 ? filters.join(' AND ') : undefined,
       sort: sort.length > 0 ? sort : undefined
+    })
+
+    console.log('Meilisearch results:', {
+      totalHits: results.totalHits,
+      hitsCount: results.hits?.length || 0,
+      filters: filters.length > 0 ? filters.join(' AND ') : 'none'
     })
 
     return {
