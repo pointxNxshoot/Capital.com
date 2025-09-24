@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
-import { listingSchema, listingUpdateSchema } from "@/lib/validators";
+import { listingSchema, listingUpdateSchema, type AdditionalSection } from "@/lib/validators";
+import AdditionalInfoSection from "./AdditionalInfoSection";
 
 type CreateInput = z.infer<typeof listingSchema>;
 type UpdateInput = z.infer<typeof listingUpdateSchema>;
@@ -26,6 +27,7 @@ export default function ListingAddEdit(props: Props) {
       latitude: -27.4698,
       longitude: 153.0251,
       images: [],
+      additionalSections: [],
     }),
   });
 
@@ -136,6 +138,12 @@ export default function ListingAddEdit(props: Props) {
 
       {/* Simple image URL input list; replace with your uploader */}
       <ImageUrlList control={form} />
+
+      {/* Additional Info Section */}
+      <AdditionalInfoSection
+        sections={form.watch("additionalSections") || []}
+        onSectionsChange={(sections) => form.setValue("additionalSections", sections, { shouldDirty: true })}
+      />
 
       <div className="pt-2">
         <button disabled={submitting} className="btn btn-primary">

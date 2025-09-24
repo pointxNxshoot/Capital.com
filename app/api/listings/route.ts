@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
     const itemsWithParsedData = items.map(item => ({
       ...item,
       images: JSON.parse(item.images),
+      additionalSections: JSON.parse(item.additionalSections),
     }));
 
     return NextResponse.json({ items: itemsWithParsedData, page, limit, total });
@@ -50,12 +51,14 @@ export async function POST(req: NextRequest) {
         ...data, 
         slug,
         images: JSON.stringify(data.images),
+        additionalSections: JSON.stringify(data.additionalSections),
       },
     });
 
     return NextResponse.json({
       ...created,
       images: data.images,
+      additionalSections: data.additionalSections,
     }, { status: 201 });
   } catch (e: any) {
     if (e.name === "ZodError") {

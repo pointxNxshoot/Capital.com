@@ -1036,6 +1036,26 @@ export default function WorkingEnhancedListingForm({
           </div>
         </div>
 
+        {/* Additional Info Feature Button */}
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                🚀 Enhanced Listing with Additional Details
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Create a more detailed listing with custom sections, file uploads, images, and tags to make your company stand out to investors.
+              </p>
+            </div>
+            <a
+              href="/listings/add"
+              className="ml-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              Use Enhanced Form
+            </a>
+          </div>
+        </div>
+
         {/* Submit Button */}
         <div className="pt-8 mt-4">
           <button

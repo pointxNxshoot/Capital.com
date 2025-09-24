@@ -96,6 +96,7 @@ model Listing {
   latitude    Float
   longitude   Float
   images      String    @default("[]") // JSON string for SQLite compatibility
+  additionalSections String @default("[]") // JSON string for additional info sections
   companyId   String?
   company     Company?  @relation(fields: [companyId], references: [id])
   createdAt   DateTime  @default(now())

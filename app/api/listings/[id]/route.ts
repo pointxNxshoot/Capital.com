@@ -23,6 +23,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const listingWithParsedData = {
       ...listing,
       images: JSON.parse(listing.images),
+      additionalSections: JSON.parse(listing.additionalSections),
     };
     
     return NextResponse.json(listingWithParsedData);
@@ -47,12 +48,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       data: {
         ...data,
         images: data.images ? JSON.stringify(data.images) : undefined,
+        additionalSections: data.additionalSections ? JSON.stringify(data.additionalSections) : undefined,
       },
     });
 
     return NextResponse.json({
       ...updated,
       images: data.images || JSON.parse(updated.images),
+      additionalSections: data.additionalSections || JSON.parse(updated.additionalSections),
     });
   } catch (e: any) {
     if (e.name === "ZodError") {

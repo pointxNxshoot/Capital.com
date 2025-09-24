@@ -102,6 +102,17 @@ export const listingFormSchema = z.object({
 
 export type ListingFormInput = z.infer<typeof listingFormSchema>
 
+// Additional Section schema for listing details
+export const additionalSectionSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1, "Title is required").max(120),
+  description: z.string().max(2000).optional(),
+  imageUrls: z.array(z.string().url()).max(10),
+  fileUrls: z.array(z.string().url()).max(10),
+  tags: z.array(z.string().min(1).max(24)).max(8),
+  order: z.number().int().min(0),
+});
+
 // Listing schemas for the new listings API
 export const photoUrl = z.string().url().trim();
 
@@ -116,6 +127,7 @@ export const listingSchema = z.object({
   latitude: z.number().gte(-90).lte(90),
   longitude: z.number().gte(-180).lte(180),
   images: z.array(photoUrl).default([]),
+  additionalSections: z.array(additionalSectionSchema).max(10).default([]),
   companyId: z.string().optional(), // if linking to a company
 });
 
@@ -124,5 +136,6 @@ export const listingUpdateSchema = listingSchema.partial().refine(
   { message: "No fields to update" }
 );
 
+export type AdditionalSection = z.infer<typeof additionalSectionSchema>
 export type ListingInput = z.infer<typeof listingSchema>
 export type ListingUpdateInput = z.infer<typeof listingUpdateSchema>
