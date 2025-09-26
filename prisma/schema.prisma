@@ -52,6 +52,9 @@ model Company {
   // Listings relationship
   listings    Listing[]
   
+  // Saved listings relationship
+  savedBy     SavedListing[]
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -102,4 +105,15 @@ model Listing {
   updatedAt   DateTime  @updatedAt
 
   @@map("listings")
+}
+
+model SavedListing {
+  id        String   @id @default(cuid())
+  userId    String   // Simple identifier for the user who saved it
+  companyId String   // Reference to the company
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, companyId]) // Prevent duplicate saves
+  @@map("saved_listings")
 }

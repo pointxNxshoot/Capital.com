@@ -97,10 +97,12 @@ export default function CompanyDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [savedCompanies, setSavedCompanies] = useState<string[]>([])
+  const [userId] = useState('user-123') // In a real app, this would come from authentication
 
   useEffect(() => {
-    // Load saved companies from localStorage
+    // Load saved companies from localStorage for related companies
     const saved = localStorage.getItem('saved-companies')
     if (saved) {
       setSavedCompanies(JSON.parse(saved))
@@ -122,7 +124,13 @@ export default function CompanyDetailPage() {
           console.log('Company photos from API:', data.company.photos)
           console.log('Company project photos from API:', data.company.projectPhotos)
           setCompany(data.company)
-          setSaved(savedCompanies.includes(data.company.id))
+          
+          // Check if this company is saved
+          const savedResponse = await fetch(`/api/saved/check?userId=${userId}&companyId=${data.company.id}`)
+          if (savedResponse.ok) {
+            const savedData = await savedResponse.json()
+            setSaved(savedData.isSaved)
+          }
         } else {
           // Fallback to mock data if API fails
           const mockCompany: Company = {
@@ -185,16 +193,55 @@ export default function CompanyDetailPage() {
     }
   }, [params.slug, savedCompanies])
 
-  const handleSave = () => {
-    if (!company) return
+  const handleSave = async () => {
+    if (!company || saving) return
     
-    const newSaved = saved ? 
-      savedCompanies.filter(id => id !== company.id) : 
-      [...savedCompanies, company.id]
+    setSaving(true)
     
-    setSavedCompanies(newSaved)
-    setSaved(!saved)
-    localStorage.setItem('saved-companies', JSON.stringify(newSaved))
+    try {
+      if (saved) {
+        // Unsave the listing
+        const response = await fetch(`/api/saved?userId=${userId}&companyId=${company.id}`, {
+          method: 'DELETE'
+        })
+        
+        if (response.ok) {
+          setSaved(false)
+          // Update localStorage for related companies
+          const newSaved = savedCompanies.filter(id => id !== company.id)
+          setSavedCompanies(newSaved)
+          localStorage.setItem('saved-companies', JSON.stringify(newSaved))
+        } else {
+          console.error('Failed to unsave listing')
+        }
+      } else {
+        // Save the listing
+        const response = await fetch('/api/saved', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            companyId: company.id
+          })
+        })
+        
+        if (response.ok) {
+          setSaved(true)
+          // Update localStorage for related companies
+          const newSaved = [...savedCompanies, company.id]
+          setSavedCompanies(newSaved)
+          localStorage.setItem('saved-companies', JSON.stringify(newSaved))
+        } else {
+          console.error('Failed to save listing')
+        }
+      }
+    } catch (error) {
+      console.error('Error saving/unsaving listing:', error)
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (loading) {
@@ -286,14 +333,15 @@ export default function CompanyDetailPage() {
 
               <button
                 onClick={handleSave}
+                disabled={saving}
                 className={`flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${
                   saved 
                     ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' 
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <Bookmark className={`h-4 w-4 mr-2 ${saved ? 'fill-current' : ''}`} />
-                {saved ? 'Saved' : 'Save'}
+                {saving ? 'Saving...' : (saved ? 'Saved' : 'Save')}
               </button>
             </div>
 
@@ -518,6 +566,7 @@ export default function CompanyDetailPage() {
                   onSave={() => {}}
                   onUnsave={() => {}}
                   isSaved={savedCompanies.includes(relatedCompany.id)}
+                  userId={userId}
                 />
               ))}
             </div>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Building2, MapPin, Tag, ExternalLink, Bookmark } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface Company {
   id: string
@@ -25,26 +25,92 @@ interface CompanyCardProps {
   onSave?: (companyId: string) => void
   onUnsave?: (companyId: string) => void
   isSaved?: boolean
+  userId?: string
 }
 
 export default function CompanyCard({ 
   company, 
   onSave, 
   onUnsave, 
-  isSaved = false 
+  isSaved = false,
+  userId = 'user-123' // Default user ID for demo purposes
 }: CompanyCardProps) {
   const [saved, setSaved] = useState(isSaved)
+  const [saving, setSaving] = useState(false)
 
-  const handleSave = (e: React.MouseEvent) => {
+  // Check if the listing is saved when component mounts
+  useEffect(() => {
+    if (userId) {
+      checkSavedStatus()
+    }
+  }, [company.id, userId])
+
+  const checkSavedStatus = async () => {
+    try {
+      const response = await fetch(`/api/saved/check?userId=${userId}&companyId=${company.id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setSaved(data.isSaved)
+      }
+    } catch (error) {
+      console.error('Error checking saved status:', error)
+    }
+  }
+
+  const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     
-    if (saved) {
-      onUnsave?.(company.id)
-    } else {
-      onSave?.(company.id)
+    if (saving) return
+    
+    setSaving(true)
+    
+    try {
+      if (saved) {
+        // Unsave the listing
+        console.log('Attempting to unsave listing:', company.id)
+        const response = await fetch(`/api/saved?userId=${userId}&companyId=${company.id}`, {
+          method: 'DELETE'
+        })
+        
+        console.log('Unsave response status:', response.status)
+        if (response.ok) {
+          setSaved(false)
+          onUnsave?.(company.id)
+          console.log('Successfully unsaved listing')
+        } else {
+          const errorText = await response.text()
+          console.error('Failed to unsave listing:', response.status, errorText)
+        }
+      } else {
+        // Save the listing
+        console.log('Attempting to save listing:', company.id)
+        const response = await fetch('/api/saved', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            companyId: company.id
+          })
+        })
+        
+        console.log('Save response status:', response.status)
+        if (response.ok) {
+          setSaved(true)
+          onSave?.(company.id)
+          console.log('Successfully saved listing')
+        } else {
+          const errorText = await response.text()
+          console.error('Failed to save listing:', response.status, errorText)
+        }
+      }
+    } catch (error) {
+      console.error('Error saving/unsaving listing:', error)
+    } finally {
+      setSaving(false)
     }
-    setSaved(!saved)
   }
 
   const location = [company.suburb, company.state].filter(Boolean).join(', ')
@@ -78,11 +144,12 @@ export default function CompanyCard({
           
           <button
             onClick={handleSave}
+            disabled={saving}
             className={`p-2 rounded-full transition-colors ${
               saved 
                 ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' 
                 : 'text-gray-400 hover:text-blue-600 hover:bg-gray-50'
-            }`}
+            } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <Bookmark className={`h-4 w-4 ${saved ? 'fill-current' : ''}`} />
           </button>
