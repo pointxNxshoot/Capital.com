@@ -111,10 +111,10 @@ export async function searchListings(params: SearchParams) {
 
     return {
       companies: results.hits,
-      total: results.totalHits,
+      total: results.totalHits || results.hits?.length || 0,
       page: params.page || 1,
       limit: params.limit || 20,
-      totalPages: Math.ceil(results.totalHits / (params.limit || 20))
+      totalPages: Math.ceil((results.totalHits || results.hits?.length || 0) / (params.limit || 20))
     }
   } catch (error) {
     console.error('Meilisearch error, falling back to database search:', error)

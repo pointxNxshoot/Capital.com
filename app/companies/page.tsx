@@ -82,6 +82,7 @@ export default function CompaniesPage() {
   })
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [savedCompanies, setSavedCompanies] = useState<string[]>([])
+  const [userId] = useState('user-123') // In a real app, this would come from authentication
 
   // Filter states
   const [selectedSector, setSelectedSector] = useState(searchParams.get('sector') || '')
@@ -272,6 +273,7 @@ export default function CompaniesPage() {
                     company={company}
                     onSave={handleSave}
                     isSaved={savedCompanies.includes(company.id)}
+                    userId={userId}
                   />
                 ))}
               </div>

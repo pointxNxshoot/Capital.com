@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Building2, MapPin, Tag, ExternalLink, Bookmark } from 'lucide-react'
 import { getBestImageForContainer, ASPECT_RATIOS, type ProcessedImage } from '@/lib/imageUtils'
+import { fetchWithRetry } from '@/lib/apiUtils'
 
 interface Company {
   id: string
@@ -40,16 +41,86 @@ interface ImprovedCompanyCardProps {
   company: Company
   onSave?: (companyId: string) => void
   isSaved?: boolean
+  userId?: string
 }
 
-export default function ImprovedCompanyCard({ company, onSave, isSaved = false }: ImprovedCompanyCardProps) {
+export default function ImprovedCompanyCard({ company, onSave, isSaved = false, userId = 'user-123' }: ImprovedCompanyCardProps) {
   const [saved, setSaved] = useState(isSaved)
+  const [saving, setSaving] = useState(false)
 
-  const handleSave = (e: React.MouseEvent) => {
+  // Check if the listing is saved when component mounts
+  useEffect(() => {
+    if (userId) {
+      checkSavedStatus()
+    }
+  }, [company.id, userId])
+
+  const checkSavedStatus = async () => {
+    try {
+      const response = await fetchWithRetry(`/api/saved/check?userId=${userId}&companyId=${company.id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setSaved(data.isSaved)
+      }
+    } catch (error) {
+      console.error('Error checking saved status:', error)
+    }
+  }
+
+  const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setSaved(!saved)
-    onSave?.(company.id)
+    
+    if (saving) return
+    
+    setSaving(true)
+    
+    try {
+      if (saved) {
+        // Unsave the listing
+        console.log('Attempting to unsave listing:', company.id)
+        const response = await fetchWithRetry(`/api/saved?userId=${userId}&companyId=${company.id}`, {
+          method: 'DELETE'
+        })
+        
+        console.log('Unsave response status:', response.status)
+        if (response.ok) {
+          setSaved(false)
+          onSave?.(company.id)
+          console.log('Successfully unsaved listing')
+        } else {
+          const errorText = await response.text()
+          console.error('Failed to unsave listing:', response.status, errorText)
+        }
+      } else {
+        // Save the listing
+        console.log('Attempting to save listing:', company.id)
+        const response = await fetchWithRetry('/api/saved', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            companyId: company.id
+          })
+        })
+        
+        console.log('Save response status:', response.status)
+        if (response.ok) {
+          setSaved(true)
+          onSave?.(company.id)
+          console.log('Successfully saved listing')
+        } else {
+          const errorText = await response.text()
+          console.error('Failed to save listing:', response.status, errorText)
+        }
+      }
+    } catch (error) {
+      console.error('Error saving/unsaving listing:', error)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleWebsiteClick = (e: React.MouseEvent) => {
@@ -94,7 +165,8 @@ export default function ImprovedCompanyCard({ company, onSave, isSaved = false }
           {/* Save button */}
           <button
             onClick={handleSave}
-            className="absolute top-2 left-2 p-2 bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100"
+            disabled={saving}
+            className={`absolute top-2 left-2 p-2 bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <Bookmark className={`h-4 w-4 ${saved ? 'fill-current text-blue-600' : 'text-gray-600'}`} />
           </button>
