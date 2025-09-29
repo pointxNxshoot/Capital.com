@@ -25,12 +25,13 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Parse JSON fields
+    // Fields are now Json types, no need to parse
     const companiesWithParsedData = companies.map(company => ({
       ...company,
-      tags: JSON.parse(company.tags),
-      photos: JSON.parse(company.photos),
-      projectPhotos: JSON.parse(company.projectPhotos),
+      tags: company.tags || [],
+      photos: company.photos || [],
+      projectPhotos: company.projectPhotos || [],
+      additionalSections: company.additionalSections || [],
     }))
 
     return NextResponse.json({ companies: companiesWithParsedData })
@@ -73,9 +74,10 @@ export async function POST(request: NextRequest) {
         ...validatedData,
         slug,
         createdBy,
-        tags: JSON.stringify(validatedData.tags),
-        photos: JSON.stringify(validatedData.photos),
-        projectPhotos: JSON.stringify(validatedData.projectPhotos),
+        tags: validatedData.tags, // Pass as array directly
+        photos: validatedData.photos, // Pass as array directly
+        projectPhotos: validatedData.projectPhotos, // Pass as array directly
+        additionalSections: validatedData.additionalSections, // Pass as array directly
         status: 'pending',
       },
     })
@@ -98,9 +100,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       company: {
         ...company,
-        tags: validatedData.tags,
-        photos: validatedData.photos,
-        projectPhotos: validatedData.projectPhotos,
+        tags: company.tags, // Already an array
+        photos: company.photos, // Already an array
+        projectPhotos: company.projectPhotos, // Already an array
+        additionalSections: company.additionalSections, // Already an array
       }
     }, { status: 201 })
   } catch (error) {

@@ -37,17 +37,19 @@ export async function GET(
       data: { views: { increment: 1 } },
     })
 
-    // Parse tags and photos from JSON string
+    // Fields are now Json types, no need to parse
     const companyWithParsedData = {
       ...company,
-      tags: JSON.parse(company.tags || '[]'),
-      photos: JSON.parse(company.photos || '[]'),
-      projectPhotos: JSON.parse(company.projectPhotos || '[]'),
+      tags: company.tags || [],
+      photos: company.photos || [],
+      projectPhotos: company.projectPhotos || [],
+      additionalSections: company.additionalSections || [],
     }
     
     console.log('Returning company with parsed data:')
     console.log('Photos:', companyWithParsedData.photos)
     console.log('Project photos:', companyWithParsedData.projectPhotos)
+    console.log('Additional sections:', companyWithParsedData.additionalSections)
 
     return NextResponse.json({ company: companyWithParsedData })
   } catch (error) {
@@ -79,16 +81,8 @@ export async function PATCH(
       )
     }
 
-    // Parse tags and photos if provided
-    if (updateData.tags) {
-      updateData.tags = JSON.stringify(updateData.tags)
-    }
-    if (updateData.photos) {
-      updateData.photos = JSON.stringify(updateData.photos)
-    }
-    if (updateData.projectPhotos) {
-      updateData.projectPhotos = JSON.stringify(updateData.projectPhotos)
-    }
+    // Fields are now Json types, pass arrays directly
+    // No need to stringify since Prisma handles Json types
 
     const company = await prisma.company.update({
       where: { id: id },
@@ -98,12 +92,13 @@ export async function PATCH(
       },
     })
 
-    // Parse tags and photos from JSON string
+    // Fields are now Json types, no need to parse
     const companyWithParsedData = {
       ...company,
-      tags: JSON.parse(company.tags || '[]'),
-      photos: JSON.parse(company.photos || '[]'),
-      projectPhotos: JSON.parse(company.projectPhotos || '[]'),
+      tags: company.tags || [],
+      photos: company.photos || [],
+      projectPhotos: company.projectPhotos || [],
+      additionalSections: company.additionalSections || [],
     }
 
     return NextResponse.json({ company: companyWithParsedData })

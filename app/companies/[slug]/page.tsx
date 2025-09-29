@@ -10,6 +10,21 @@ import AdvisorSidebar from '@/components/AdvisorSidebar'
 import GoogleMap from '@/components/GoogleMap'
 import RealestateGallery from '@/components/RealestateGallery'
 
+interface AdditionalSection {
+  id: string
+  title: string
+  description?: string
+  imageUrls: string[]
+  fileUrls: string[]
+  deck?: {
+    type: 'pdf' | 'link' | null
+    url: string | null
+  } | null
+  tags: string[]
+  order: number
+  visibility: 'public' | 'requestAccess'
+}
+
 interface Company {
   id: string
   name: string
@@ -32,6 +47,7 @@ interface Company {
   tags: string[]
   photos: string[]
   projectPhotos: string[]
+  additionalSections: AdditionalSection[]
   views: number
   amountSeeking?: string
   raisingReason?: string
@@ -155,6 +171,7 @@ export default function CompanyDetailPage() {
             tags: ['AI', 'Medical Technology', 'Diagnostics', 'Healthcare', 'Innovation'],
             photos: [],
             projectPhotos: [],
+            additionalSections: [],
             views: 156,
             amountSeeking: '$5M - $10M',
             raisingReason: 'Expansion into international markets and R&D for new diagnostic products',
@@ -464,6 +481,115 @@ export default function CompanyDetailPage() {
               <div className="mb-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">Properties & Assets</h2>
                 <p className="text-gray-700 leading-relaxed">{company.properties}</p>
+              </div>
+            )}
+
+            {/* Additional Materials */}
+            {company.additionalSections && company.additionalSections.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Additional Materials</h2>
+                <div className="space-y-6">
+                  {company.additionalSections
+                    .sort((a, b) => a.order - b.order)
+                    .map((section) => (
+                      <div key={section.id} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">{section.title}</h3>
+                            {section.description && (
+                              <p className="text-gray-700 leading-relaxed">{section.description}</p>
+                            )}
+                          </div>
+                          {section.visibility === 'requestAccess' && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              Request Access
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Images */}
+                        {section.imageUrls && section.imageUrls.length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-medium text-gray-900 mb-2">Images</h4>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                              {section.imageUrls.map((imageUrl, index) => (
+                                <img
+                                  key={index}
+                                  src={imageUrl}
+                                  alt={`${section.title} image ${index + 1}`}
+                                  className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Files */}
+                        {section.fileUrls && section.fileUrls.length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-medium text-gray-900 mb-2">Documents</h4>
+                            <div className="space-y-2">
+                              {section.fileUrls.map((fileUrl, index) => {
+                                const fileName = fileUrl.split('/').pop() || `Document ${index + 1}`
+                                const fileExtension = fileName.split('.').pop()?.toLowerCase()
+                                return (
+                                  <a
+                                    key={index}
+                                    href={fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <FileText className="h-5 w-5 mr-3 text-blue-600" />
+                                    <div className="flex-1">
+                                      <div className="font-medium text-gray-900">{fileName}</div>
+                                      <div className="text-sm text-gray-500 uppercase">{fileExtension}</div>
+                                    </div>
+                                    <ExternalLink className="h-4 w-4 text-gray-400" />
+                                  </a>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Pitch Deck */}
+                        {section.deck && section.deck.url && (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-medium text-gray-900 mb-2">Pitch Deck</h4>
+                            <a
+                              href={section.deck.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              View Pitch Deck
+                              <ExternalLink className="h-4 w-4 ml-2" />
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Tags */}
+                        {section.tags && section.tags.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900 mb-2">Tags</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {section.tags.map((tag, index) => (
+                                <span
+                                  key={index}
+                                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                >
+                                  <Tag className="h-3 w-3 mr-1" />
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
               </div>
             )}
 
