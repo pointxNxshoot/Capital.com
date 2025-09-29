@@ -29,7 +29,7 @@ model Company {
   country     String   @default("Australia")
   latitude    Float?   // For Google Maps
   longitude   Float?   // For Google Maps
-  tags        String   @default("[]") // JSON string for SQLite compatibility
+  tags        Json?    @default("[]") // Array of strings
   status      String   @default("pending") // pending | published | archived
   views       Int      @default(0)
   
@@ -39,8 +39,9 @@ model Company {
   properties   String?  // Description of company properties/assets
   
   // Photos
-  photos      String   @default("[]") // JSON string for photos array
-  projectPhotos String @default("[]") // JSON string for project photos array
+  photos      Json?    @default("[]") // Array of URL strings
+  projectPhotos Json?  @default("[]") // Array of URL strings
+  additionalSections Json? @default("[]") // Array of AdditionalSection objects
   
   // Advisor relationship
   advisorId   String?
@@ -75,7 +76,7 @@ model Advisor {
   country     String   @default("Australia")
   websiteUrl  String?
   description String?
-  specialties String   @default("[]") // JSON string for specialties
+  specialties Json?    @default("[]") // Array of strings
   status      String   @default("active") // active | inactive
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -98,8 +99,8 @@ model Listing {
   postcode    String?
   latitude    Float
   longitude   Float
-  images      String    @default("[]") // JSON string for SQLite compatibility
-  additionalSections String @default("[]") // JSON string for additional info sections
+  images      Json?     @default("[]") // Array of URL strings
+  additionalSections Json? @default("[]") // Array of AdditionalSection objects
   companyId   String?
   company     Company?  @relation(fields: [companyId], references: [id])
   createdAt   DateTime  @default(now())

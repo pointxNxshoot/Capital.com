@@ -19,11 +19,11 @@ export async function GET(req: NextRequest) {
       prisma.listing.count(),
     ]);
 
-    // Parse JSON fields for SQLite compatibility
+    // Fields are now Json types, no need to parse
     const itemsWithParsedData = items.map(item => ({
       ...item,
-      images: JSON.parse(item.images),
-      additionalSections: JSON.parse(item.additionalSections),
+      images: item.images || [],
+      additionalSections: item.additionalSections || [],
     }));
 
     return NextResponse.json({ items: itemsWithParsedData, page, limit, total });
@@ -50,15 +50,15 @@ export async function POST(req: NextRequest) {
       data: { 
         ...data, 
         slug,
-        images: JSON.stringify(data.images),
-        additionalSections: JSON.stringify(data.additionalSections),
+        images: data.images, // Pass as array directly
+        additionalSections: data.additionalSections, // Pass as array directly
       },
     });
 
     return NextResponse.json({
       ...created,
-      images: data.images,
-      additionalSections: data.additionalSections,
+      images: created.images, // Already an array
+      additionalSections: created.additionalSections, // Already an array
     }, { status: 201 });
   } catch (e: any) {
     if (e.name === "ZodError") {

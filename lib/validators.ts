@@ -1,5 +1,21 @@
 import { z } from 'zod'
 
+// Additional Section schema for listing details
+export const additionalSectionSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1, "Title is required").max(120),
+  description: z.string().max(2000).optional(),
+  imageUrls: z.array(z.string().min(1)).max(10), // Allow relative paths
+  fileUrls: z.array(z.string().min(1)).max(10), // Allow relative paths
+  deck: z.object({
+    type: z.enum(["pdf", "link"]).nullable(),
+    url: z.string().nullable(),
+  }).nullable(),
+  tags: z.array(z.string().min(1).max(24)).max(8),
+  order: z.number().int().min(0),
+  visibility: z.enum(["public", "requestAccess"]).default("public"),
+});
+
 export const companySchema = z.object({
   name: z.string().min(1, 'Company name is required').max(100),
   sector: z.string().min(1, 'Sector is required'),
@@ -17,12 +33,13 @@ export const companySchema = z.object({
   country: z.string().default('Australia'),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
-  tags: z.array(z.string()).default([]),
+  tags: z.array(z.string().min(1).max(50)).max(50).default([]),
   amountSeeking: z.string().optional(),
   raisingReason: z.string().optional(),
   properties: z.string().optional(),
-  photos: z.array(z.string()).default([]),
-  projectPhotos: z.array(z.string()).default([]),
+  photos: z.array(z.string().min(1)).max(20).default([]),
+  projectPhotos: z.array(z.string().min(1)).max(20).default([]),
+  additionalSections: z.array(additionalSectionSchema).max(10).default([]),
   advisorId: z.string().optional().nullable(),
   createdBy: z.string().optional(),
 })
@@ -82,6 +99,7 @@ export const listingFormSchema = z.object({
   properties: z.string().optional(),
   photos: z.array(z.string()).default([]),
   projectPhotos: z.array(z.string()).default([]),
+  additionalSections: z.array(additionalSectionSchema).default([]),
   advisorId: z.string().optional().nullable(),
   
   // Advisor fields (optional)
@@ -102,19 +120,8 @@ export const listingFormSchema = z.object({
 
 export type ListingFormInput = z.infer<typeof listingFormSchema>
 
-// Additional Section schema for listing details
-export const additionalSectionSchema = z.object({
-  id: z.string(),
-  title: z.string().min(1, "Title is required").max(120),
-  description: z.string().max(2000).optional(),
-  imageUrls: z.array(z.string().url()).max(10),
-  fileUrls: z.array(z.string().url()).max(10),
-  tags: z.array(z.string().min(1).max(24)).max(8),
-  order: z.number().int().min(0),
-});
-
 // Listing schemas for the new listings API
-export const photoUrl = z.string().url().trim();
+export const photoUrl = z.string().min(1).trim(); // Allow relative paths
 
 export const listingSchema = z.object({
   title: z.string().min(1, "Title is required").max(140),

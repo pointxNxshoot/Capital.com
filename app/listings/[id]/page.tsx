@@ -1,5 +1,6 @@
 import Link from "next/link";
 import GoogleMap from "@/components/GoogleMap";
+import PublicAdditionalMaterials from "@/components/PublicAdditionalMaterials";
 
 async function getListing(id: string) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -97,6 +98,13 @@ export default async function Page({ params }: { params: { id: string } }) {
             )}
           </div>
         </div>
+
+        {/* Additional Materials Section */}
+        {listing.additionalSections && listing.additionalSections.length > 0 && (
+          <div className="mt-8">
+            <PublicAdditionalMaterials sections={listing.additionalSections} />
+          </div>
+        )}
       </div>
     </main>
   );

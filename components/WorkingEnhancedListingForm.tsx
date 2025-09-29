@@ -3,9 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { listingFormSchema, type ListingFormInput } from '@/lib/validators'
+import { listingFormSchema, type ListingFormInput, type AdditionalSection } from '@/lib/validators'
 import { Building2, Upload, X, User, MapPin, DollarSign, FileText } from 'lucide-react'
 import FixedPhotoUploadManager from './FixedPhotoUploadManager'
+import AdditionalInfoSection from './AdditionalInfoSection'
+import ErrorDisplay from './ErrorDisplay'
+import { useErrorHandler } from '@/hooks/useErrorHandler'
+import { sanitizePayload, validateAdditionalSections, convertNumericFields, logResponseDetails } from '@/lib/payloadUtils'
 import { geocodeAddressClient } from '@/lib/geocoding'
 
 const sectors = [
@@ -131,8 +135,12 @@ export default function WorkingEnhancedListingForm({
   const [advisorHeadshot, setAdvisorHeadshot] = useState<{id: string, url: string, order: number}[]>([])
   const [companyPhotos, setCompanyPhotos] = useState<{id: string, url: string, order: number}[]>([])
   const [projectPhotos, setProjectPhotos] = useState<{id: string, url: string, order: number}[]>([])
+  const [additionalSections, setAdditionalSections] = useState<AdditionalSection[]>([])
   const [coordinates, setCoordinates] = useState<{latitude: number, longitude: number} | null>(null)
   const [isGeocoding, setIsGeocoding] = useState(false)
+  
+  // Error handling
+  const { errorState, handleApiError, showError, clearError, getFieldError } = useErrorHandler()
 
   const {
     register,
@@ -300,6 +308,7 @@ export default function WorkingEnhancedListingForm({
         tags: selectedTags,
         photos: processedPhotos,
         projectPhotos: processedProjectPhotos,
+        additionalSections: additionalSections,
         specialties: advisorSpecialties,
       }
       onSave(formData)
@@ -383,7 +392,7 @@ export default function WorkingEnhancedListingForm({
       }
 
       // Then create the company
-      const companyData = {
+      const rawCompanyData = {
         name: data.name,
         sector: data.sector,
         industry: data.industry || (data.sector === 'Other' ? 'Other' : ''),
@@ -406,6 +415,7 @@ export default function WorkingEnhancedListingForm({
         properties: data.properties,
         photos: companyPhotosUrls,
         projectPhotos: projectPhotosUrls,
+        additionalSections: validateAdditionalSections(additionalSections),
         advisorId: advisorId,
         createdBy: (() => {
           // Get or create a consistent user ID
@@ -421,6 +431,10 @@ export default function WorkingEnhancedListingForm({
         })()
       }
 
+      // Sanitize and validate the payload
+      const sanitizedData = sanitizePayload(rawCompanyData)
+      const companyData = convertNumericFields(sanitizedData)
+
       console.log('Submitting company data:', companyData)
 
       const response = await fetch('/api/companies', {
@@ -431,8 +445,12 @@ export default function WorkingEnhancedListingForm({
         body: JSON.stringify(companyData),
       })
 
+      // Log response details in development
+      logResponseDetails(response, process.env.NODE_ENV === 'development')
+
       if (response.ok) {
         setIsSubmitted(true)
+        clearError() // Clear any previous errors
         reset()
         setSelectedTags([])
         setAdvisorSpecialties([])
@@ -443,14 +461,57 @@ export default function WorkingEnhancedListingForm({
         setAdvisorHeadshot([])
         setCompanyPhotos([])
         setProjectPhotos([])
+        setAdditionalSections([])
       } else {
-        const errorData = await response.json()
-        console.error('Error response:', errorData)
-        throw new Error('Failed to submit listing')
+        // Handle API errors with structured response
+        const errorData = await handleApiError(response)
+        if (errorData) {
+          // Extract field-level errors if available
+          const fieldErrors: Record<string, string> = {}
+          if (errorData.details && typeof errorData.details === 'object') {
+            if (errorData.details.fieldErrors) {
+              Object.assign(fieldErrors, errorData.details.fieldErrors)
+            } else if (errorData.details.issues) {
+              // Handle Zod validation errors
+              errorData.details.issues.forEach((issue: any) => {
+                if (issue.path && issue.path.length > 0) {
+                  const fieldName = issue.path.join('.')
+                  fieldErrors[fieldName] = issue.message
+                }
+              })
+            }
+          }
+          
+          showError(errorData, fieldErrors)
+          
+          // Emit analytics event for failed submission
+          if (typeof window !== 'undefined' && (window as any).gtag) {
+            (window as any).gtag('event', 'listing_submit_failed', {
+              error_code: errorData.code || 'UNKNOWN_ERROR',
+              error_message: errorData.error
+            })
+          }
+        }
       }
     } catch (error) {
       console.error('Error submitting listing:', error)
-      alert('Failed to submit listing. Please try again.')
+      
+      // Handle network or other errors
+      const errorData = {
+        error: 'Network error or unexpected failure',
+        code: 'NETWORK_ERROR',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }
+      
+      showError(errorData)
+      
+      // Emit analytics event
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'listing_submit_failed', {
+          error_code: 'NETWORK_ERROR',
+          error_message: errorData.error
+        })
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -494,6 +555,18 @@ export default function WorkingEnhancedListingForm({
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        {/* Error Display */}
+        <ErrorDisplay
+          message={errorState.message}
+          code={errorState.code}
+          fieldErrors={errorState.fieldErrors}
+          isVisible={errorState.isVisible}
+          onDismiss={clearError}
+          onRetry={() => {
+            clearError()
+            handleSubmit(onSubmit)()
+          }}
+        />
         {/* Advisor Question */}
         <div className="bg-blue-50 rounded-lg p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
@@ -958,6 +1031,14 @@ export default function WorkingEnhancedListingForm({
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               placeholder="Describe your company's properties, assets, and physical locations..."
+            />
+          </div>
+
+          {/* Additional Materials Section */}
+          <div className="mb-6">
+            <AdditionalInfoSection
+              sections={additionalSections}
+              onSectionsChange={setAdditionalSections}
             />
           </div>
 

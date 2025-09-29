@@ -19,11 +19,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const listing = await findListing(id);
     if (!listing) return NextResponse.json({ error: "Not found" }, { status: 404 });
     
-    // Parse JSON fields for SQLite compatibility
+    // Fields are now Json types, no need to parse
     const listingWithParsedData = {
       ...listing,
-      images: JSON.parse(listing.images),
-      additionalSections: JSON.parse(listing.additionalSections),
+      images: listing.images || [],
+      additionalSections: listing.additionalSections || [],
     };
     
     return NextResponse.json(listingWithParsedData);
@@ -47,15 +47,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       where: { id: existing.id },
       data: {
         ...data,
-        images: data.images ? JSON.stringify(data.images) : undefined,
-        additionalSections: data.additionalSections ? JSON.stringify(data.additionalSections) : undefined,
+        images: data.images || undefined, // Pass as array directly
+        additionalSections: data.additionalSections || undefined, // Pass as array directly
       },
     });
 
     return NextResponse.json({
       ...updated,
-      images: data.images || JSON.parse(updated.images),
-      additionalSections: data.additionalSections || JSON.parse(updated.additionalSections),
+      images: updated.images || [], // Already an array
+      additionalSections: updated.additionalSections || [], // Already an array
     });
   } catch (e: any) {
     if (e.name === "ZodError") {
