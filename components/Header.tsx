@@ -13,7 +13,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <Building2 className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">Capital.com</span>
+            <span className="text-xl font-bold text-gray-900">GetCapital.com</span>
           </Link>
 
           {/* Navigation */}

@@ -7,14 +7,15 @@ async function getListing(id: string) {
   return res.json();
 }
 
-export default async function Page({ params }: { params: { id: string } }) {
-  const listing = await getListing(params.id);
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const listing = await getListing(id);
   if (!listing) return <div className="p-4">Not found</div>;
 
   return (
     <main className="p-4">
       <h1 className="text-xl font-semibold mb-4">Edit Listing</h1>
-      <ListingAddEdit mode="edit" idOrSlug={params.id} initial={listing} />
+      <ListingAddEdit mode="edit" idOrSlug={id} initial={listing} />
     </main>
   );
 }

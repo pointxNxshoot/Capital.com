@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { createdBy, ...companyData } = body
+    const { createdBy, ...rawCompanyData } = body
     
     if (!createdBy) {
       return NextResponse.json(
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate the company data
-    const validatedData = companySchema.parse(companyData)
+    const validatedData = companySchema.parse(rawCompanyData)
     
     // Generate slug from name
     const base = validatedData.name
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const slug = base || `company-${Date.now()}`
 
     // Prepare data for Prisma using utility function
-    const companyData = prepareCompanyData(validatedData, {
+    const prismaData = prepareCompanyData(validatedData, {
       slug,
       createdBy,
       status: 'pending',
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     // Create the company
     console.log('Creating company in database:', validatedData.name, 'Owner:', createdBy)
     const company = await prisma.company.create({
-      data: companyData,
+      data: prismaData,
     })
     console.log('Successfully created company in database:', company.id)
 

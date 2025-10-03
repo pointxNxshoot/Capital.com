@@ -13,14 +13,36 @@ interface Company {
   name: string
   slug: string
   sector: string
+  industry: string
   description?: string
   logoUrl?: string
   websiteUrl?: string
   suburb?: string
   state?: string
   tags: string[]
+  photos: string[]
   views: number
   createdAt: string
+  amountSeeking?: string
+  advisor?: {
+    id?: string
+    firmName: string
+    teamLead: string
+    headshotUrl?: string
+    email: string
+    phone: string
+    street?: string
+    suburb?: string
+    state?: string
+    postcode?: string
+    country?: string
+    websiteUrl?: string
+    description?: string
+    specialties?: string[]
+    status?: string
+    createdAt?: string
+    updatedAt?: string
+  }
 }
 
 interface SearchResponse {

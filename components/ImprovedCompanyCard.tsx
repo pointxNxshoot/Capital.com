@@ -21,7 +21,7 @@ interface Company {
   views: number
   amountSeeking?: string
   advisor?: {
-    id: string
+    id?: string
     firmName: string
     teamLead: string
     headshotUrl?: string
@@ -31,8 +31,13 @@ interface Company {
     suburb?: string
     state?: string
     postcode?: string
-    country: string
+    country?: string
     websiteUrl?: string
+    description?: string
+    specialties?: string[]
+    status?: string
+    createdAt?: string
+    updatedAt?: string
   }
 }
 

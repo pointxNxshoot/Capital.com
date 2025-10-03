@@ -301,10 +301,8 @@ export default function CompanyDetailPage() {
             {company.photos && company.photos.length > 0 ? (
               <div className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Facility & Location</h2>
-                {console.log('Company photos:', company.photos)}
                 <RealestateGallery 
                   images={company.photos.map((url: string, index: number) => {
-                    console.log(`Photo ${index + 1}:`, url.substring(0, 50) + '...')
                     return {
                       src: url,
                       alt: `${company.name} photo ${index + 1}`
@@ -398,10 +396,8 @@ export default function CompanyDetailPage() {
             {company.projectPhotos && company.projectPhotos.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Project & Expansion Plans</h2>
-                {console.log('Company project photos:', company.projectPhotos)}
                 <RealestateGallery 
                   images={company.projectPhotos.map((url: string, index: number) => {
-                    console.log(`Project photo ${index + 1}:`, url.substring(0, 50) + '...')
                     return {
                       src: url,
                       alt: `${company.name} project photo ${index + 1}`

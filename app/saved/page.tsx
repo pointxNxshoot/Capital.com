@@ -9,14 +9,36 @@ interface SavedCompany {
   id: string
   name: string
   slug: string
-  category: string
+  sector: string
+  industry?: string
   description?: string
   logoUrl?: string
   websiteUrl?: string
   suburb?: string
   state?: string
   tags: string[]
+  photos: string[]
   views: number
+  amountSeeking?: string
+  advisor?: {
+    id?: string
+    firmName: string
+    teamLead: string
+    headshotUrl?: string
+    email: string
+    phone: string
+    street?: string
+    suburb?: string
+    state?: string
+    postcode?: string
+    country?: string
+    websiteUrl?: string
+    description?: string
+    specialties?: string[]
+    status?: string
+    createdAt?: string
+    updatedAt?: string
+  }
 }
 
 export default function SavedPage() {
@@ -45,9 +67,11 @@ export default function SavedPage() {
           id: '1',
           name: 'TechFlow Solutions',
           slug: 'techflow-solutions',
-          category: 'Technology',
+          sector: 'Technology',
+          industry: 'Software',
+          photos: [],
           description: 'AI-powered workflow automation platform for enterprise clients.',
-          logoUrl: null,
+          logoUrl: undefined,
           websiteUrl: 'https://techflow.com',
           suburb: 'Sydney',
           state: 'NSW',
@@ -58,9 +82,11 @@ export default function SavedPage() {
           id: '2',
           name: 'GreenEnergy Co',
           slug: 'greenenergy-co',
-          category: 'Energy',
+          sector: 'Energy',
+          industry: 'Renewable Energy',
+          photos: [],
           description: 'Renewable energy solutions for commercial and residential properties.',
-          logoUrl: null,
+          logoUrl: undefined,
           websiteUrl: 'https://greenenergy.com',
           suburb: 'Melbourne',
           state: 'VIC',

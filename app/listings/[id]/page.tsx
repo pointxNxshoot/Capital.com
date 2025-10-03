@@ -8,8 +8,9 @@ async function getListing(id: string) {
   return res.json();
 }
 
-export default async function Page({ params }: { params: { id: string } }) {
-  const listing = await getListing(params.id);
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const listing = await getListing(id);
   if (!listing) return <div className="p-4">Listing not found</div>;
 
   return (
@@ -69,7 +70,7 @@ export default async function Page({ params }: { params: { id: string } }) {
             </div>
 
             <div className="flex gap-4">
-              <Link href={`/listings/${listing.id}/edit`} className="btn btn-primary">
+              <Link href={`/listings/${id}/edit`} className="btn btn-primary">
                 Edit Listing
               </Link>
             </div>
