@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Search, Building2, Plus, Tag, Bookmark } from 'lucide-react'
 import EnhancedSearchBar from './EnhancedSearchBar'
+import AuthNav from './AuthNav'
 
 export default function Header() {
   return (
@@ -46,6 +47,11 @@ export default function Header() {
           {/* Search Bar */}
           <div className="flex-1 max-w-lg mx-8">
             <EnhancedSearchBar />
+          </div>
+
+          {/* Auth Navigation */}
+          <div className="hidden md:block">
+            <AuthNav />
           </div>
 
           {/* Mobile menu button */}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { companySchema } from '@/lib/validators'
 import { searchService } from '@/lib/searchService'
+import { prepareCompanyData } from '@/lib/prismaUtils'
 
 // GET /api/my-listings - Get user's listings
 export async function GET(request: NextRequest) {
@@ -66,18 +67,17 @@ export async function POST(request: NextRequest) {
       .replace(/(^-|-$)/g, '')
     const slug = base || `company-${Date.now()}`
 
+    // Prepare data for Prisma using utility function
+    const companyData = prepareCompanyData(validatedData, {
+      slug,
+      createdBy,
+      status: 'pending',
+    })
+
     // Create the company
     console.log('Creating company in database:', validatedData.name, 'Owner:', createdBy)
     const company = await prisma.company.create({
-      data: {
-        ...validatedData,
-        slug,
-        createdBy,
-        tags: JSON.stringify(validatedData.tags),
-        photos: JSON.stringify(validatedData.photos),
-        projectPhotos: JSON.stringify(validatedData.projectPhotos),
-        status: 'pending',
-      },
+      data: companyData,
     })
     console.log('Successfully created company in database:', company.id)
 

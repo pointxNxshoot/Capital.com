@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { companySchema, searchSchema } from '@/lib/validators'
 import { buildSearchWhere, buildSearchOrderBy, searchListings } from '@/lib/search'
 import { searchService } from '@/lib/searchService'
+import { prepareCompanyData } from '@/lib/prismaUtils'
 
 // GET /api/companies - Search and list companies
 export async function GET(request: NextRequest) {
@@ -124,16 +125,15 @@ export async function POST(request: NextRequest) {
       finalSlug = `${slug}-${counter}`
     }
 
+    // Prepare data for Prisma using utility function
+    const companyData = prepareCompanyData(validatedData, {
+      slug: finalSlug,
+      status: 'pending', // New listings are pending approval
+      createdBy: validatedData.createdBy || 'anonymous', // Track who created the listing
+    })
+
     const company = await prisma.company.create({
-      data: {
-        ...validatedData,
-        slug: finalSlug,
-        tags: JSON.stringify(validatedData.tags), // Store as JSON string for SQLite
-        photos: JSON.stringify(validatedData.photos), // Store as JSON string for SQLite
-        projectPhotos: JSON.stringify(validatedData.projectPhotos), // Store as JSON string for SQLite
-        status: 'pending', // New listings are pending approval
-        createdBy: validatedData.createdBy || 'anonymous', // Track who created the listing
-      },
+      data: companyData,
     })
 
     // Add to Meilisearch index (both pending and published)
