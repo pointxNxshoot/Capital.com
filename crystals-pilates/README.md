@@ -47,3 +47,18 @@ python3 -m http.server 8080
 
 It's fully static, so it works on any host — Netlify, Vercel, GitHub Pages,
 Cloudflare Pages, or plain S3. Point the host at the `crystals-pilates/` folder.
+
+### Vercel (from this repo)
+
+The repo root is a separate Next.js app, so Vercel must be pointed at this
+folder — otherwise it tries to build the wrong project.
+
+1. On [vercel.com](https://vercel.com) → **Add New… → Project** → import this repo.
+2. Under **Root Directory**, click **Edit** and choose `crystals-pilates`.
+3. **Framework Preset** → **Other** (leave the Build Command empty, and the
+   Output Directory blank). The `vercel.json` here handles the rest.
+4. **Deploy.** You'll get a `*.vercel.app` URL; add a custom domain later under
+   the project's **Domains** tab.
+
+Every push to the branch redeploys automatically.
+
