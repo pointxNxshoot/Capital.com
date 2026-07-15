@@ -42,6 +42,11 @@
   } else {
     reveals.forEach(function (el) { el.classList.add("in"); });
   }
+  /* Failsafe: if the observer never fires (odd browsers/webviews), make sure
+     nothing stays hidden. */
+  setTimeout(function () {
+    reveals.forEach(function (el) { el.classList.add("in"); });
+  }, 2500);
 
   /* Booking form (demo — no backend) */
   var form = document.getElementById("bookingForm");

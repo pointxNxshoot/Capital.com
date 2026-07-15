@@ -298,10 +298,13 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.1; lett
 .footer__copy { font-size: 0.85rem; color: rgba(255,255,255,.5); }
 
 /* ---------- Reveal animation ---------- */
-.reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
-.reveal.in { opacity: 1; transform: none; }
+/* Reveal is a progressive enhancement: only hide content once JS confirms it
+   can reveal it again. Without JS the .js class is never added, so everything
+   stays fully visible. */
+.js .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+.js .reveal.in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; transition: none; }
+  .js .reveal { opacity: 1; transform: none; transition: none; }
   .hero__scroll { animation: none; }
 }
 
