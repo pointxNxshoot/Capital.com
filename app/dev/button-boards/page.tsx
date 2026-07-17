@@ -478,6 +478,166 @@ function BoardGlowField() {
   );
 }
 
+/* ================================================================ BOARD F · WARM NEUTRAL
+   Soft Neutral's calm layout warmed with the gradient's coral. Active row lifts
+   onto a card with a soft coral wash + gradient accent bar; primary is a gradient pill.
+   ======================================================================== */
+
+function BoardWarmNeutral() {
+  const [active, setActive] = useState("browse");
+  const [tab, setTab] = useState("overview");
+  const groups = [
+    {
+      label: "Marketplace",
+      items: [
+        { id: "browse", label: "Browse companies" },
+        { id: "map", label: "Map view" },
+        { id: "saved", label: "Saved", badge: "4" },
+      ],
+    },
+    {
+      label: "Activity",
+      items: [
+        { id: "messages", label: "Messages", badge: "2" },
+        { id: "offers", label: "Offers" },
+      ],
+    },
+  ];
+  const tabs = ["overview", "financials", "documents"];
+
+  return (
+    <div className="grid gap-9 lg:grid-cols-[300px_1fr]">
+      <div
+        className="flex flex-col gap-6 p-4"
+        style={{
+          background: "linear-gradient(180deg,#FFFFFF,#F3F4F6)",
+          borderRadius: 20,
+          border: `1px solid ${BORDER}`,
+        }}
+      >
+        {groups.map((g) => (
+          <div key={g.label} className="space-y-1.5">
+            <span className="px-3 text-xs font-medium uppercase tracking-wider text-gray-400">
+              {g.label}
+            </span>
+            {g.items.map((it) => {
+              const on = active === it.id;
+              return (
+                <button
+                  key={it.id}
+                  onClick={() => setActive(it.id)}
+                  className="relative flex w-full items-center gap-3 overflow-hidden px-3 py-2.5 text-left transition-all"
+                  style={{
+                    borderRadius: 12,
+                    color: on ? INK : MUTED,
+                    background: on
+                      ? "linear-gradient(135deg,rgba(255,106,61,.16),rgba(255,255,255,0) 70%),#fff"
+                      : "transparent",
+                    boxShadow: on
+                      ? "0 1px 2px rgba(0,0,0,.05), 0 6px 16px rgba(255,106,61,.14)"
+                      : "none",
+                  }}
+                >
+                  {on && (
+                    <span
+                      className="absolute left-0 top-2 bottom-2 w-[3px] rounded"
+                      style={{ background: "linear-gradient(180deg,#FF8A5B,#FF6A3D)" }}
+                    />
+                  )}
+                  <span className="grid size-6 place-items-center" style={{ color: on ? CORAL : MUTED }}>
+                    <GridIcon />
+                  </span>
+                  <span className="flex-1 text-sm font-medium">{it.label}</span>
+                  {it.badge && (
+                    <span
+                      className="grid size-5 place-items-center text-xs font-semibold text-white"
+                      style={{ borderRadius: 999, background: INK }}
+                    >
+                      {it.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col justify-center gap-8">
+        <Swatch label="Buttons · gradient / soft / quiet">
+          <button
+            className="px-7 py-3 text-sm font-medium text-white transition-transform active:translate-y-px"
+            style={{
+              borderRadius: 999,
+              background: "linear-gradient(135deg,#FF8A5B,#FF6A3D)",
+              boxShadow: "0 6px 16px rgba(255,106,61,.28)",
+            }}
+          >
+            List a company
+          </button>
+          <button
+            className="px-7 py-3 text-sm font-medium transition-transform active:translate-y-px"
+            style={{
+              borderRadius: 999,
+              color: INK,
+              background: "#fff",
+              boxShadow: "0 1px 2px rgba(0,0,0,.05), 0 4px 12px rgba(0,0,0,.06)",
+            }}
+          >
+            Save
+          </button>
+          <button
+            className="px-7 py-3 text-sm font-medium"
+            style={{ borderRadius: 999, color: MUTED, background: PANEL }}
+          >
+            Cancel
+          </button>
+        </Swatch>
+
+        <Swatch label="Tabs · gradient pill">
+          <div className="inline-flex gap-1 p-1" style={{ borderRadius: 999, background: PANEL }}>
+            {tabs.map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className="px-5 py-2 text-sm font-medium capitalize transition-all"
+                style={{
+                  borderRadius: 999,
+                  color: tab === t ? "#fff" : MUTED,
+                  background: tab === t ? "linear-gradient(135deg,#FF8A5B,#FF6A3D)" : "transparent",
+                  boxShadow: tab === t ? "0 4px 12px rgba(255,106,61,.26)" : "none",
+                }}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </Swatch>
+
+        <Swatch label="Feature pills">
+          {["Verified listings", "Direct to owners"].map((f) => (
+            <div
+              key={f}
+              className="flex items-center gap-3 px-4 py-3"
+              style={{ borderRadius: 999, background: CORAL_SOFT }}
+            >
+              <span
+                className="grid size-7 place-items-center text-white"
+                style={{ borderRadius: 999, background: CORAL }}
+              >
+                <CheckIcon />
+              </span>
+              <span className="text-sm font-medium" style={{ color: "#8a3f21" }}>
+                {f}
+              </span>
+            </div>
+          ))}
+        </Swatch>
+      </div>
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------------- icons */
 
 function SearchIcon({ color = "#9CA3AF" }: { color?: string }) {
@@ -540,7 +700,7 @@ export default function ButtonBoardsPage() {
           Button &amp; tab boards.
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-gray-500">
-          Five directions for the buttons, tabs, filter pills and search across Capital.com,
+          Six directions for the buttons, tabs, filter pills and search across Capital.com,
           each re-drawn from a reference shot. Everything is clickable but nothing is wired in —
           pick the boards you like and we&apos;ll promote those styles into the real components.
         </p>
@@ -589,6 +749,15 @@ export default function ButtonBoardsPage() {
         blurb="A search field wrapped in a soft conic-gradient glow, with a gradient submit button and quick-search chips underneath. For the main marketplace search."
       >
         <BoardGlowField />
+      </BoardShell>
+
+      <BoardShell
+        index="F"
+        title="Warm Neutral"
+        reference="Soft Neutral × Warm Gradient"
+        blurb="The combination to build on: Soft Neutral's calm, grouped, low-contrast layout — warmed with the gradient's coral. The selected row lifts onto a card with a soft coral wash, a gradient accent bar and a coral icon. The primary button becomes a warm gradient pill; secondary stays quiet and neutral."
+      >
+        <BoardWarmNeutral />
       </BoardShell>
     </div>
   );
