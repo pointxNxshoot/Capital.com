@@ -437,17 +437,34 @@ function BoardWarmGradient() {
 
 /* ================================================================ BOARD E · GLOW FIELD */
 
+const AI_GLOW_CSS = `
+@property --ai-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@keyframes ai-spin { to { --ai-angle: 360deg; } }
+@keyframes ai-breathe { 0%,100% { opacity:.5; filter:blur(6px); } 50% { opacity:.95; filter:blur(10px); } }
+@keyframes ai-pulse {
+  0% { box-shadow:0 0 0 0 rgba(91,141,239,.5); }
+  70% { box-shadow:0 0 0 12px rgba(91,141,239,0); }
+  100% { box-shadow:0 0 0 0 rgba(91,141,239,0); }
+}
+.ai-glow-ring {
+  position:absolute; inset:-2px; border-radius:22px;
+  background: conic-gradient(from var(--ai-angle),#5B8DEF,#FF6A3D,#E89370,#8B5BEF,#5B8DEF);
+  animation: ai-spin 6s linear infinite, ai-breathe 4s ease-in-out infinite;
+}
+.ai-go { transition: transform .12s ease; animation: ai-pulse 2.4s ease-out infinite; }
+.ai-go:hover { transform: scale(1.08); }
+.ai-go:active { transform: scale(.94); }
+@media (prefers-reduced-motion: reduce) {
+  .ai-glow-ring { animation: ai-breathe 6s ease-in-out infinite; }
+  .ai-go { animation: none; }
+}`;
+
 function BoardGlowField() {
   return (
     <div className="max-w-2xl">
+      <style dangerouslySetInnerHTML={{ __html: AI_GLOW_CSS }} />
       <div className="relative" style={{ borderRadius: 20 }}>
-        <div
-          className="absolute -inset-[2px] opacity-80 blur-[6px]"
-          style={{
-            borderRadius: 22,
-            background: "conic-gradient(from 180deg,#5B8DEF,#FF6A3D,#E89370,#5B8DEF)",
-          }}
-        />
+        <div className="ai-glow-ring" />
         <div className="relative flex items-center gap-3 bg-white px-5 py-4" style={{ borderRadius: 20 }}>
           <SearchIcon color={MUTED} />
           <input
@@ -455,7 +472,7 @@ function BoardGlowField() {
             className="flex-1 bg-transparent text-base text-gray-900 outline-none placeholder:text-gray-400"
           />
           <button
-            className="grid size-10 place-items-center text-white transition-transform active:scale-95"
+            className="ai-go grid size-10 place-items-center text-white"
             style={{ borderRadius: 999, background: "linear-gradient(135deg,#5B8DEF,#2563EB)" }}
             aria-label="Search"
           >
